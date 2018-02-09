@@ -39,7 +39,7 @@ namespace CG_Course
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
 
             gl.ClearColor(0.7f, 0.7f, 0.8f, 1.0f);  // цвет фона
-            gl.Disable(OpenGL.GL_DEPTH_TEST);       // так надо, некогда объяснять
+            gl.Disable(OpenGL.GL_DEPTH_TEST);
         }
 
         // Отрисовка ----------------------------------------------------------
