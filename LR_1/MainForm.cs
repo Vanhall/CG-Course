@@ -45,7 +45,9 @@ namespace CG_Course
         // Отрисовка ----------------------------------------------------------
         private void GLControl_OpenGLDraw(object sender, RenderEventArgs args)
         {
+            gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT);
             Primitives.Render();
+            gl.Finish();
         }
 
         // Изменение размеров окна --------------------------------------------
@@ -74,7 +76,7 @@ namespace CG_Course
                 // Если правый клик - меняем координаты вершины
                 if (e.Button == MouseButtons.Right)
                 {
-                    Primitives.Current.EditVertex(e.Location.X, H - e.Location.Y);
+                    Primitives.Current.MoveVertex(e.Location.X, H - e.Location.Y);
                 }
             }
         }

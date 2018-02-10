@@ -8,16 +8,17 @@ namespace CG_Course
 {
     public class Primitive
     {
+        static int PrimitiveIndex = 0;              // счетчик созданных объектов
+
         OpenGL gl;
+        int VertexCount = 0;                        // кол-во вершин
+        uint[] VBOPtr = new uint[1];                // "указатель" VBO
+        List<float> VBO = new List<float>();        // список координат вершин VBO
+        public DataTable Coords = new DataTable();  // таблица для DataGridView
+        public bool Active;                         // выбран ли сейчас этот объект
+        public Color FillColor;                     // цвет примитива
 
-        uint[] VBOPtr = new uint[1];                    // "указатель" VBO
-        int VertexCount = 0;                            // кол-во вершин
-        List<float> VBO = new List<float>();            // список координат вершин VBO
-        public DataTable Coords = new DataTable();      // таблица для DataGridView 
-
-        public static int PrimitiveIndex = 0;           // счетчик созданных объектов
-        public Color FillColor;                         // цвет примитива
-        int activeVertex;                               // индекс выбранной вершины
+        int activeVertex;                           // индекс выбранной вершины
         public int ActiveVertex
         {
             get => activeVertex;
@@ -27,20 +28,18 @@ namespace CG_Course
                 else activeVertex = -1;
             }
         }
-        public bool Active;                           // выбран ли сейчас этот объект
-
-        // имя
-        string name;
+        
+        string name;                                // название объекта
         public string Name
         {
             get => name;
         }
 
         // Конструктор --------------------------------------------------------
-        public Primitive(OpenGL GL, Color Col)
+        public Primitive(OpenGL GL, Color Color)
         {
             gl = GL;
-            FillColor = Col;
+            FillColor = Color;
             name = String.Format("Object #{0}", ++PrimitiveIndex);
             gl.GenBuffers(1, VBOPtr);
             activeVertex = -1;
@@ -71,18 +70,17 @@ namespace CG_Course
         // Удаление вершины ---------------------------------------------------
         public void RemoveVertex(int index)
         {
-            if (index >= 0)
+            if (index >= 0 && index < VBO.Count / 2)
             {
                 VBO.RemoveRange(index * 2, 2);
-                VertexCount--;
                 Coords.Rows.RemoveAt(index);
+                if (--VertexCount == 0) activeVertex = -1;
                 UpdateVBO();
-                if (VertexCount == 0) activeVertex = -1;
             }
         }
 
-        // Изменение вершины --------------------------------------------------
-        public void EditVertex(int newX, int newY)
+        // Перемещение вершины ------------------------------------------------
+        public void MoveVertex(int newX, int newY)
         {
             if (activeVertex >= 0)
             {

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Общие сведения об этой сборке предоставляются следующим набором
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
-[assembly: AssemblyTitle("LR 1")]
+[assembly: AssemblyTitle("LR 2")]
 [assembly: AssemblyDescription("ЛР №1 по курсу \"Компьютерная графика\"")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("НГТУ")]
-[assembly: AssemblyProduct("LR 1")]
+[assembly: AssemblyProduct("LR 2")]
 [assembly: AssemblyCopyright("Бригада #7: Малахов, Тябин")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
-[assembly: Guid("59d1a539-abe3-4a20-a6e2-9ca7770bd43f")]
+[assembly: Guid("c8ee75ba-a154-4165-ae2f-a7df9b04db93")]
 
 // Сведения о версии сборки состоят из следующих четырех значений:
 //

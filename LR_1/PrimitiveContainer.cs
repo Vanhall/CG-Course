@@ -13,14 +13,13 @@ namespace CG_Course
         public Color FillColor;                 // цвет заливки новых объектов
 
         // Конструктор --------------------------------------------------------
-        public PrimitiveContainer(OpenGLControl GLControl, Color Col)
+        public PrimitiveContainer(OpenGLControl GLControl, Color Color)
         {
             gl = GLControl.OpenGL;
-            FillColor = Col;
+            FillColor = Color;
 
             Current = new Primitive(gl, FillColor);
-            Items = new BindingList<Primitive>();
-            Items.Add(Current);
+            Items = new BindingList<Primitive> { Current };
         }
 
         // Создание нового объекта --------------------------------------------
@@ -34,14 +33,14 @@ namespace CG_Course
         // Удаление текущего объекта ------------------------------------------
         public void Remove(int index)
         {
-            if (index >= 0) Items.RemoveAt(index);
+            if (index >= 0 && index < Items.Count) Items.RemoveAt(index);
             if (Items.Count == 0) Current = null;
         }
 
         // Смена текущего (редактируемого) объекта ----------------------------
         public void SwitchTo(int index)
         {
-            if (index >= 0)
+            if (index >= 0 && index < Items.Count)
             {
                 Current.Active = false;
                 Current = Items[index];
@@ -52,9 +51,7 @@ namespace CG_Course
         // Метод отрисовки ----------------------------------------------------
         public void Render()
         {
-            gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT);
             foreach (Primitive P in Items) P.Render();
-            gl.Finish();
         }
     }
 }
