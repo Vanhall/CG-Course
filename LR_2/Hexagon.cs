@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using SharpGL;
 
@@ -7,20 +6,22 @@ namespace LR_2
 {
     public class Hexagon
     {
+        static int hexagonIndex = 0;    // Счетчик созданных объектов
         // Флаги режимов рендеринга
         [Flags] public enum RenderFlags
         {
             None = 0,
-            Outline = 1,
-            Center = 2,
-            TranslationLines = 4,
-            RotationLines = 8,
-            ScaleArrows =16,
-            Translation = Center | TranslationLines,
-            Rotation = Center | RotationLines,
-            Scale = Center | ScaleArrows | Outline
+            Hexagon = 1,
+            Outline = 2,
+            Center = 4,
+            TranslationLines = 8,
+            RotationLines = 16,
+            ScaleArrows = 32,
+            Translation = Center | TranslationLines | Hexagon,
+            Rotation = Center | RotationLines | Hexagon,
+            Scale = Center | ScaleArrows | Outline | Hexagon
         };
-        public RenderFlags RenderMode;
+        public RenderFlags RenderMode;  // Флаги режимов рендеринга
         
         OpenGL gl;
         public Color FillColor;
@@ -34,7 +35,14 @@ namespace LR_2
         const float minRadius = 20f;            // Минимальный радиус объекта
         const int vertexCount = 8;              // Число вершин
 
+        string name;                            // имя объекта
+        public string Name
+        {
+            get => name;
+        }
+
         #region Параметры модельно-видовых преобразований
+        // "Истинный" радиус объекта ------------------------------------------
         float radius;
         public float Radius
         {
@@ -49,6 +57,7 @@ namespace LR_2
             }
         }
 
+        // Смещение -----------------------------------------------------------
         Point translation;
         public Point Translation
         {
@@ -60,6 +69,7 @@ namespace LR_2
             }
         }
 
+        // Поворот ------------------------------------------------------------
         float rotation;
         public float Rotation
         {
@@ -70,6 +80,7 @@ namespace LR_2
             }
         }
 
+        // Растяжение ---------------------------------------------------------
         PointF scale;
         public PointF Scale
         {
@@ -85,6 +96,7 @@ namespace LR_2
         public Hexagon(OpenGL GL, Point Center, Color Color)
         {
             gl = GL;
+            name = String.Format("Object #{0}", ++hexagonIndex);
             translation = Center;
             FillColor = Color;
             radius = minRadius;
@@ -99,6 +111,8 @@ namespace LR_2
         }
 
         #region Генерация VBO
+
+        // Обновление основного VBO -------------------------------------------
         private void UpdateVBO()
         {
             float angle = (float)(Math.PI / 3.0);
@@ -115,6 +129,7 @@ namespace LR_2
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
 
+        // Генерация текстурных координат -------------------------------------
         private void GenerateUV()
         {
             VBO[16] = 0.5f;
@@ -129,20 +144,22 @@ namespace LR_2
             VBO[31] = VBO[19];
         }
 
+        // Обновление VBO линий смещения --------------------------------------
         private void UpdateTranslationVBO()
         {
             int tX = translation.X, tY = translation.Y;
-            VBOTransLines[1] = 1;
-            VBOTransLines[2] = tX;
-            VBOTransLines[3] = 1;
-            VBOTransLines[4] = tX;
-            VBOTransLines[5] = tY;
+            VBOTransLines[1] = 1;   // Задаем две линии
+            VBOTransLines[2] = tX;  // параллельные OX и OY
+            VBOTransLines[3] = 1;   //          o <-(центр объекта)     
+            VBOTransLines[4] = tX;  //          |
+            VBOTransLines[5] = tY;  // (0,1)----o <-(Х центра,1)
 
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOTransLines, OpenGL.GL_DYNAMIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
 
+        // Обновление VBO линий угла поворота ---------------------------------
         private void UpdateRotationVBO()
         {
             VBORotLines[2] = radius;        // VBO радиус-линии
@@ -159,46 +176,55 @@ namespace LR_2
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
 
+        // Обновление VBO стрелок растяжения ----------------------------------
         private void UpdateScaleVBO()
         {
+            // Задаем 4 треугольника
             VBOScaleArrows = new float[] {
-                -10f, 15f, 0f, 20f, 10f, 15f,
-                -10f, -15f, 0f, -20f, 10f, -15f,
-                15f, 10f, 20f, 0f, 15f, -10f,
-                -15f, 10f, -20f, 0f, -15f, -10f
+                -10f, 15f, 0f, 20f, 10f, 15f,       // верхний
+                -10f, -15f, 0f, -20f, 10f, -15f,    // нижний
+                15f, 10f, 20f, 0f, 15f, -10f,       // правый
+                -15f, 10f, -20f, 0f, -15f, -10f     // левый
             };
 
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOScaleArrows, OpenGL.GL_DYNAMIC_DRAW);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOScaleArrows, OpenGL.GL_STATIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
         #endregion
 
+        // Метод отрисовки ----------------------------------------------------
         public void Render()
         {
-            gl.Color(FillColor.R, FillColor.G, FillColor.B);
-
-            gl.Enable(OpenGL.GL_TEXTURE_2D);
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
-            Texture.Bind();
-
-            gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-            gl.TexCoordPointer(2, OpenGL.GL_FLOAT, 0, (IntPtr)(16 * sizeof(float)));
-
             gl.EnableClientState(OpenGL.GL_VERTEX_ARRAY);
-            gl.EnableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
 
-            gl.PushMatrix();
-            gl.Translate(translation.X, translation.Y, 0f);
-            gl.Rotate(rotation, 0f, 0f, 1f);
-            gl.Scale(scale.X, scale.Y, 0f);
-            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, vertexCount);
-            gl.PopMatrix();
+            // Шестиугольник
+            if ((RenderMode & RenderFlags.Hexagon) != 0)
+            {
+                gl.Color(FillColor.R, FillColor.G, FillColor.B);
 
-            Texture.Unbind();
-            gl.Disable(OpenGL.GL_TEXTURE_2D);
-            gl.DisableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
+                gl.Enable(OpenGL.GL_TEXTURE_2D);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
+                Texture.Bind();
+
+                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+                gl.TexCoordPointer(2, OpenGL.GL_FLOAT, 0, (IntPtr)(16 * sizeof(float)));
+
+                gl.EnableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
+
+                gl.PushMatrix();
+                gl.Translate(translation.X, translation.Y, 0f);
+                gl.Rotate(rotation, 0f, 0f, 1f);
+                gl.Scale(scale.X, scale.Y, 0f);
+                gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, vertexCount);
+                gl.PopMatrix();
+
+                Texture.Unbind();
+                gl.Disable(OpenGL.GL_TEXTURE_2D);
+                gl.DisableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
+            }
             
+            // Центр
             if ((RenderMode & RenderFlags.Center) != 0)
             {
                 gl.PushMatrix();
@@ -209,6 +235,7 @@ namespace LR_2
                 gl.PopMatrix();
             }
 
+            // Контур
             if ((RenderMode & RenderFlags.Outline) != 0)
             {
                 gl.PushMatrix();
@@ -221,6 +248,7 @@ namespace LR_2
                 gl.PopMatrix();
             }
 
+            // Линии смещения
             if ((RenderMode & RenderFlags.TranslationLines) != 0)
             {
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
@@ -232,6 +260,7 @@ namespace LR_2
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
             }
             
+            // Линии углов поворота
             if ((RenderMode & RenderFlags.RotationLines) != 0)
             {
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
@@ -251,6 +280,7 @@ namespace LR_2
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
             }
 
+            // Стрелки смещения
             if ((RenderMode & RenderFlags.ScaleArrows) != 0)
             {
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);

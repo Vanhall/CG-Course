@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Hexagon.cs" />
+    <Compile Include="HexagonContainer.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -97,7 +98,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="CompGraphics.ico" />
+    <None Include="Resources\photosicon.png" />
     <Content Include="Textures\default.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\OpenGL.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
