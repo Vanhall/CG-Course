@@ -7,43 +7,34 @@ namespace LR_2
 {
     public class Hexagon
     {
+        // Флаги режимов рендеринга
         [Flags] public enum RenderFlags
         {
             None = 0,
             Outline = 1,
-            Origin = 2,
-            Points = 4,
-            TranslationLines = 8,
-            RotationLines = 16
+            Center = 2,
+            TranslationLines = 4,
+            RotationLines = 8,
+            ScaleArrows =16,
+            Translation = Center | TranslationLines,
+            Rotation = Center | RotationLines,
+            Scale = Center | ScaleArrows | Outline
         };
         public RenderFlags RenderMode;
-
-        Point center;
-        public Point Center
-        {
-            get => center;
-            set
-            {
-                center = value;
-                VBO[0] = center.X;
-                VBO[1] = center.Y;
-                UpdateVBO();
-                UpdateTranslationVBO();
-                UpdateRotationVBO();
-            }
-        }
         
         OpenGL gl;
         public Color FillColor;
-        uint[] VBOPtr = new uint[3];                // "указатель" VBO
-        float[] VBO = new float[32];        // список координат вершин VBO
-        float[] VBOTransLines = new float[6];
-        float[] VBORotLines = new float[16];
-        public Texture Texture;
+        uint[] VBOPtr = new uint[4];            // указатели VBO
+        float[] VBO = new float[32];            // VBO шестигранника
+        float[] VBOTransLines = new float[6];   // VBO линий смещения
+        float[] VBORotLines = new float[16];    // VBO линий вращения
+        float[] VBOScaleArrows;                 // VBO стрелок растяжения
+        public Texture Texture;                 // Текстура
 
-        const float minRadius = 20f;
-        const int VertexCount = 8;
+        const float minRadius = 20f;            // Минимальный радиус объекта
+        const int vertexCount = 8;              // Число вершин
 
+        #region Параметры модельно-видовых преобразований
         float radius;
         public float Radius
         {
@@ -79,34 +70,42 @@ namespace LR_2
             }
         }
 
+        PointF scale;
+        public PointF Scale
+        {
+            get => scale;
+            set
+            {
+                scale = value;
+            }
+        }
+        #endregion
+
+        // Конструктор --------------------------------------------------------
         public Hexagon(OpenGL GL, Point Center, Color Color)
         {
             gl = GL;
-            center = Center;
+            translation = Center;
             FillColor = Color;
             radius = minRadius;
-            gl.GenBuffers(3, VBOPtr);
-            VBO[0] = Center.X;
-            VBO[1] = Center.Y;
-            UpdateVBO();
-            
+            gl.GenBuffers(4, VBOPtr);
             Texture = new Texture(gl, @"Textures/default.png");
+            scale = new PointF(1f, 1f);
             GenerateUV();
-
-            translation = new Point(0, 0);
+            UpdateVBO();
             UpdateTranslationVBO();
-
-            rotation = 0f;
             UpdateRotationVBO();
+            UpdateScaleVBO();
         }
 
+        #region Генерация VBO
         private void UpdateVBO()
         {
             float angle = (float)(Math.PI / 3.0);
             for (int i = 2, step = 0; step < 6; step++, i += 2)
             {
-                VBO[i] = radius * (float)Math.Cos(angle * step) + center.X;
-                VBO[i + 1] = radius * (float)Math.Sin(angle * step) + center.Y;
+                VBO[i] = radius * (float)Math.Cos(angle * step);
+                VBO[i + 1] = radius * (float)Math.Sin(angle * step);
             }
             VBO[14] = VBO[2];
             VBO[15] = VBO[3];
@@ -132,14 +131,12 @@ namespace LR_2
 
         private void UpdateTranslationVBO()
         {
-            int cX = center.X, cY = center.Y;
             int tX = translation.X, tY = translation.Y;
-            VBOTransLines[0] = cX;
-            VBOTransLines[1] = cY;
-            VBOTransLines[2] = tX + cX;
-            VBOTransLines[3] = cY;
-            VBOTransLines[4] = tX + cX;
-            VBOTransLines[5] = tY + cY;
+            VBOTransLines[1] = 1;
+            VBOTransLines[2] = tX;
+            VBOTransLines[3] = 1;
+            VBOTransLines[4] = tX;
+            VBOTransLines[5] = tY;
 
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOTransLines, OpenGL.GL_DYNAMIC_DRAW);
@@ -148,21 +145,34 @@ namespace LR_2
 
         private void UpdateRotationVBO()
         {
-            int cX = center.X, cY = center.Y;
-            
-            VBORotLines[2] = radius;
-            VBORotLines[6] = radius;
-            VBORotLines[8] = radius;
-            VBORotLines[10] = radius - 10f;
-            VBORotLines[11] = 10f;
-            VBORotLines[12] = radius;
-            VBORotLines[14] = radius - 10f;
-            VBORotLines[15] = -10f;
+            VBORotLines[2] = radius;        // VBO радиус-линии
+            VBORotLines[6] = radius;        // и стрелки для
+            VBORotLines[8] = radius;        // визуализации угла поворота
+            VBORotLines[10] = radius - 10f; //     o
+            VBORotLines[11] = 10f;          //      \
+            VBORotLines[12] = radius;       //o======o
+            VBORotLines[14] = radius - 10f; //      /
+            VBORotLines[15] = -10f;         //     o
 
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBORotLines, OpenGL.GL_DYNAMIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
+
+        private void UpdateScaleVBO()
+        {
+            VBOScaleArrows = new float[] {
+                -10f, 15f, 0f, 20f, 10f, 15f,
+                -10f, -15f, 0f, -20f, 10f, -15f,
+                15f, 10f, 20f, 0f, 15f, -10f,
+                -15f, 10f, -20f, 0f, -15f, -10f
+            };
+
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOScaleArrows, OpenGL.GL_DYNAMIC_DRAW);
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
+        }
+        #endregion
 
         public void Render()
         {
@@ -179,38 +189,36 @@ namespace LR_2
             gl.EnableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
 
             gl.PushMatrix();
-            gl.Translate(center.X, center.Y, 0f);
-            gl.Rotate(rotation, 0f, 0f, 1f);
-            gl.Translate(-center.X, -center.Y, 0f);
             gl.Translate(translation.X, translation.Y, 0f);
-            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, VertexCount);
+            gl.Rotate(rotation, 0f, 0f, 1f);
+            gl.Scale(scale.X, scale.Y, 0f);
+            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, vertexCount);
             gl.PopMatrix();
-            
-            Texture.UnBind();
+
+            Texture.Unbind();
             gl.Disable(OpenGL.GL_TEXTURE_2D);
             gl.DisableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
-
-            if ((RenderMode & RenderFlags.Points) != 0)
+            
+            if ((RenderMode & RenderFlags.Center) != 0)
             {
-                gl.PointSize(5f);
-                gl.Color(new float[] { 0.9f, 0f, 0f });
-                gl.DrawArrays(OpenGL.GL_POINTS, 0, VertexCount);
-            }
-
-            if ((RenderMode & RenderFlags.Origin) != 0)
-            {
+                gl.PushMatrix();
+                gl.Translate(translation.X, translation.Y, 0f);
                 gl.PointSize(10f);
                 gl.Color(new float[] { 1f, 1f, 1f });
                 gl.DrawArrays(OpenGL.GL_POINTS, 0, 1);
+                gl.PopMatrix();
             }
 
             if ((RenderMode & RenderFlags.Outline) != 0)
             {
+                gl.PushMatrix();
+                gl.Translate(translation.X, translation.Y, 0f);
                 gl.Enable(OpenGL.GL_LINE_STIPPLE);
                 gl.LineStipple(1, 0xF0F0);
                 gl.Color(new float[] { 0f, 0f, 0f });
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP, 1, 7);
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
+                gl.PopMatrix();
             }
 
             if ((RenderMode & RenderFlags.TranslationLines) != 0)
@@ -219,11 +227,11 @@ namespace LR_2
                 gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
                 gl.Enable(OpenGL.GL_LINE_STIPPLE);
                 gl.LineStipple(1, 0xFFF0);
-                gl.Color(new float[] { 0.8f, 0f, 0f });
+                gl.Color(new float[] { 1f, 0f, 0f });
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, 3);
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
             }
-
+            
             if ((RenderMode & RenderFlags.RotationLines) != 0)
             {
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
@@ -231,18 +239,37 @@ namespace LR_2
                 gl.Enable(OpenGL.GL_LINE_STIPPLE);
                 gl.LineStipple(1, 0xAFFA);
 
-                gl.Color(new float[] { 0f, 0f, 0f });
                 gl.PushMatrix();
-                gl.Translate(center.X, center.Y, 0f);
+                gl.Translate(translation.X, translation.Y, 0f);
+                gl.Color(new float[] { 0f, 0f, 0f });
                 gl.DrawArrays(OpenGL.GL_LINES, 0, 2);
-
-                gl.Color(new float[] { 0.8f, 0f, 0f });
+                gl.Color(new float[] { 1f, 0f, 0f });
                 gl.Rotate(rotation, 0f, 0f, 1f);
                 gl.DrawArrays(OpenGL.GL_LINES, 2, 6);
                 gl.PopMatrix();
+
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
             }
 
+            if ((RenderMode & RenderFlags.ScaleArrows) != 0)
+            {
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
+                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+
+                gl.Color(new float[] { 1f, 0f, 0f });
+                gl.PushMatrix();
+                gl.Translate(translation.X, translation.Y, 0f);
+                gl.Scale(1f, scale.Y, 0f);
+                gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
+                gl.PopMatrix();
+
+                gl.PushMatrix();
+                gl.Translate(translation.X, translation.Y, 0f);
+                gl.Scale(scale.X, 1f, 0f);
+                gl.DrawArrays(OpenGL.GL_TRIANGLES, 6, 6);
+                gl.PopMatrix();
+            }
+            
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }

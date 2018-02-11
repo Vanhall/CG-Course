@@ -14,11 +14,12 @@ namespace LR_2
     {
         OpenGL gl;
         int H;
-        enum EditMode { None, OriginAndRadius, Translation, Rotation, Scaling};
+        enum EditMode { None, Translation, Rotation, Scaling };
         int Mode = (int)EditMode.None;
 
         Hexagon Temp;
-        Point MouseOrigin;
+        Point MouseOrigin, Center;
+        PointF OldScale;
 
         public MainForm()
         {
@@ -40,10 +41,12 @@ namespace LR_2
 
             gl.ClearColor(0.8f, 0.8f, 0.8f, 1.0f);  // цвет фона
             gl.Disable(OpenGL.GL_DEPTH_TEST);
+            gl.LineWidth(2f);
 
-            Temp = new Hexagon(GLControl.OpenGL, new Point(GLControl.Height/2, GLControl.Width/2), Color.White);
-            Mode = (int)EditMode.OriginAndRadius;
-            Temp.RenderMode = Hexagon.RenderFlags.Outline;
+            Center = new Point(GLControl.Width / 2, GLControl.Height / 2);
+            Temp = new Hexagon(GLControl.OpenGL, Center, Color.White);
+            Mode = (int)EditMode.Translation;
+            Temp.RenderMode = Hexagon.RenderFlags.Translation;
         }
 
         // Отрисовка ----------------------------------------------------------
@@ -67,9 +70,92 @@ namespace LR_2
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
             
             H = GLControl.Height;
+            Center.X = GLControl.Width / 2;
+            Center.Y = GLControl.Height / 2;
+        }
+
+        // Нажата кнопка мыши -------------------------------------------------
+        private void GLControl_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+                switch (Mode)
+                {
+                    case (int)EditMode.None:
+                        {
+                            // no mode selected
+                        }
+                        break;
+                    case (int)EditMode.Translation:
+                        {
+                            MouseOrigin.X = e.X - Temp.Translation.X;
+                            MouseOrigin.Y = H - e.Y - Temp.Translation.Y;
+                        }
+                        break;
+                    case (int)EditMode.Rotation:
+                        {
+                            Temp.Rotation = GetAngle(Temp.Translation, new Point(e.X, H - e.Y));
+                        }
+                        break;
+                    case (int)EditMode.Scaling:
+                        {
+                            MouseOrigin.X = e.X;
+                            MouseOrigin.Y = H - e.Y;
+                            OldScale = Temp.Scale;
+                        }
+                        break;
+                }
+
+            if (e.Button == MouseButtons.Right)
+            {
+                Temp.Radius = GetDistance(Temp.Translation, new Point(e.X, H - e.Y));
+                Temp.RenderMode |= Hexagon.RenderFlags.Outline;
+            }
+        }
+
+        // Перемещение мыши ---------------------------------------------------
+        private void GLControl_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+                switch (Mode)
+                {
+                    case (int)EditMode.None:
+                        {
+                            // no mode selected
+                        }
+                        break;
+                    case (int)EditMode.Translation:
+                        {
+                            Temp.Translation = new Point(e.X - MouseOrigin.X, H - MouseOrigin.Y - e.Y);
+                        }
+                        break;
+                    case (int)EditMode.Rotation:
+                        {
+                            Temp.Rotation = GetAngle(Temp.Translation, new Point(e.X, H - e.Y));
+                        }
+                        break;
+                    case (int)EditMode.Scaling:
+                        {
+                            Temp.Scale = new PointF(
+                                OldScale.X + (e.X - MouseOrigin.X) / 70f,
+                                OldScale.Y + (H - e.Y - MouseOrigin.Y) / 70f);
+                        }
+                        break;
+                }
+
+            if (e.Button == MouseButtons.Right)
+                Temp.Radius = GetDistance(Temp.Translation, new Point(e.X, H - e.Y));
+        }
+
+        // Отпущена кнопка мыши -----------------------------------------------
+        private void GLControl_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right && Mode != (int)EditMode.Scaling)
+                Temp.RenderMode ^= Hexagon.RenderFlags.Outline;
         }
         #endregion
 
+        #region Вспомогательное
+        // Расстояние между двумя точками -------------------------------------
         private float GetDistance(Point Origin, Point Location)
         {
             int X = Origin.X - Location.X;
@@ -77,101 +163,36 @@ namespace LR_2
             return (float)Math.Sqrt(X * X + Y * Y);
         }
 
+        // Угол между двумя векторами (ОХ и прямой, проход. через 0,0)---------
         private float GetAngle(Point Origin, Point Location)
         {
             int X = Location.X - Origin.X;
             int Y = Location.Y - Origin.Y;
             double angle = X / (Math.Sqrt(X * X + Y * Y));
-            
-            return (float)(Math.Acos(angle) * 180.0 / Math.PI);
+            angle = Math.Acos(angle) * 180.0 / Math.PI;
+            if (Y < 0) angle = 360.0 - angle;
+            return (float)angle;
         }
+        #endregion
 
-        private void GLControl_MouseDown(object sender, MouseEventArgs e)
-        {
-            switch(Mode)
-            {
-                case (int)EditMode.None:
-                    {
-                        // no mode selected
-                    } break;
-                case (int)EditMode.OriginAndRadius:
-                    {
-                        if (e.Button == MouseButtons.Left)
-                            Temp.Center = new Point(e.X, H - e.Y);
-                    }
-                    break;
-                case (int)EditMode.Translation:
-                    {
-                        MouseOrigin.X = e.X - Temp.Translation.X;
-                        MouseOrigin.Y = H - e.Y - Temp.Translation.Y;
-                    }
-                    break;
-                case (int)EditMode.Rotation:
-                    {
-                        Temp.Rotation = GetAngle(Temp.Center, new Point(e.X, H - e.Y));
-                    }
-                    break;
-                case (int)EditMode.Scaling:
-                    {
-                        // no mode selected
-                    }
-                    break;
-            }
-        }
-
-        private void GLControl_MouseMove(object sender, MouseEventArgs e)
-        {
-            switch (Mode)
-            {
-                case (int)EditMode.None:
-                    {
-                        // no mode selected
-                    }
-                    break;
-                case (int)EditMode.OriginAndRadius:
-                    {
-                        if (e.Button == MouseButtons.Left)
-                            Temp.Center = new Point(e.X, H - e.Y);
-                        if (e.Button == MouseButtons.Right)
-                            Temp.Radius = GetDistance(Temp.Center, new Point(e.X, H - e.Y));
-                    }
-                    break;
-                case (int)EditMode.Translation:
-                    {
-                        if (e.Button == MouseButtons.Left)
-                            Temp.Translation = new Point(e.X - MouseOrigin.X, H - MouseOrigin.Y - e.Y);
-                    }
-                    break;
-                case (int)EditMode.Rotation:
-                    {
-                        // no mode selected
-                    }
-                    break;
-                case (int)EditMode.Scaling:
-                    {
-                        // no mode selected
-                    }
-                    break;
-            }
-            
-        }
-
-        private void ButtonEditOrigin_Click(object sender, EventArgs e)
-        {
-            Mode = (int)EditMode.OriginAndRadius;
-            Temp.RenderMode = Hexagon.RenderFlags.Origin | Hexagon.RenderFlags.Outline | Hexagon.RenderFlags.Points;
-        }
-
+        #region Кнопки модельно-видовых преобразований
         private void ButtonTranslate_Click(object sender, EventArgs e)
         {
             Mode = (int)EditMode.Translation;
-            Temp.RenderMode = Hexagon.RenderFlags.Origin | Hexagon.RenderFlags.Outline | Hexagon.RenderFlags.TranslationLines;
+            Temp.RenderMode = Hexagon.RenderFlags.Translation;
         }
 
         private void ButtonRotate_Click(object sender, EventArgs e)
         {
             Mode = (int)EditMode.Rotation;
-            Temp.RenderMode = Hexagon.RenderFlags.Origin | Hexagon.RenderFlags.Outline | Hexagon.RenderFlags.RotationLines;
+            Temp.RenderMode = Hexagon.RenderFlags.Rotation;
         }
+
+        private void ButtonScale_Click(object sender, EventArgs e)
+        {
+            Mode = (int)EditMode.Scaling;
+            Temp.RenderMode = Hexagon.RenderFlags.Scale;
+        }
+        #endregion
     }
 }

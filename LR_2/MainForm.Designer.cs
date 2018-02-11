@@ -30,11 +30,11 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.MainPanel = new System.Windows.Forms.Panel();
+            this.ButtonRotate = new System.Windows.Forms.Button();
+            this.ButtonTranslate = new System.Windows.Forms.Button();
             this.GLControl = new SharpGL.OpenGLControl();
             this.openGLControl1 = new SharpGL.OpenGLControl();
-            this.ButtonEditOrigin = new System.Windows.Forms.Button();
-            this.ButtonTranslate = new System.Windows.Forms.Button();
-            this.ButtonRotate = new System.Windows.Forms.Button();
+            this.ButtonScale = new System.Windows.Forms.Button();
             this.MainPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.GLControl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).BeginInit();
@@ -43,14 +43,34 @@
             // MainPanel
             // 
             this.MainPanel.BackColor = System.Drawing.SystemColors.Control;
+            this.MainPanel.Controls.Add(this.ButtonScale);
             this.MainPanel.Controls.Add(this.ButtonRotate);
             this.MainPanel.Controls.Add(this.ButtonTranslate);
-            this.MainPanel.Controls.Add(this.ButtonEditOrigin);
             this.MainPanel.Dock = System.Windows.Forms.DockStyle.Right;
             this.MainPanel.Location = new System.Drawing.Point(740, 0);
             this.MainPanel.Name = "MainPanel";
             this.MainPanel.Size = new System.Drawing.Size(268, 729);
             this.MainPanel.TabIndex = 0;
+            // 
+            // ButtonRotate
+            // 
+            this.ButtonRotate.Location = new System.Drawing.Point(89, 353);
+            this.ButtonRotate.Name = "ButtonRotate";
+            this.ButtonRotate.Size = new System.Drawing.Size(75, 23);
+            this.ButtonRotate.TabIndex = 2;
+            this.ButtonRotate.Text = "Rotate";
+            this.ButtonRotate.UseVisualStyleBackColor = true;
+            this.ButtonRotate.Click += new System.EventHandler(this.ButtonRotate_Click);
+            // 
+            // ButtonTranslate
+            // 
+            this.ButtonTranslate.Location = new System.Drawing.Point(89, 324);
+            this.ButtonTranslate.Name = "ButtonTranslate";
+            this.ButtonTranslate.Size = new System.Drawing.Size(75, 23);
+            this.ButtonTranslate.TabIndex = 1;
+            this.ButtonTranslate.Text = "Translate";
+            this.ButtonTranslate.UseVisualStyleBackColor = true;
+            this.ButtonTranslate.Click += new System.EventHandler(this.ButtonTranslate_Click);
             // 
             // GLControl
             // 
@@ -71,6 +91,7 @@
             this.GLControl.Resized += new System.EventHandler(this.GLControl_Resized);
             this.GLControl.MouseDown += new System.Windows.Forms.MouseEventHandler(this.GLControl_MouseDown);
             this.GLControl.MouseMove += new System.Windows.Forms.MouseEventHandler(this.GLControl_MouseMove);
+            this.GLControl.MouseUp += new System.Windows.Forms.MouseEventHandler(this.GLControl_MouseUp);
             // 
             // openGLControl1
             // 
@@ -87,35 +108,15 @@
             this.openGLControl1.Size = new System.Drawing.Size(741, 729);
             this.openGLControl1.TabIndex = 1;
             // 
-            // ButtonEditOrigin
+            // ButtonScale
             // 
-            this.ButtonEditOrigin.Location = new System.Drawing.Point(89, 295);
-            this.ButtonEditOrigin.Name = "ButtonEditOrigin";
-            this.ButtonEditOrigin.Size = new System.Drawing.Size(75, 23);
-            this.ButtonEditOrigin.TabIndex = 0;
-            this.ButtonEditOrigin.Text = "Origin";
-            this.ButtonEditOrigin.UseVisualStyleBackColor = true;
-            this.ButtonEditOrigin.Click += new System.EventHandler(this.ButtonEditOrigin_Click);
-            // 
-            // ButtonTranslate
-            // 
-            this.ButtonTranslate.Location = new System.Drawing.Point(89, 324);
-            this.ButtonTranslate.Name = "ButtonTranslate";
-            this.ButtonTranslate.Size = new System.Drawing.Size(75, 23);
-            this.ButtonTranslate.TabIndex = 1;
-            this.ButtonTranslate.Text = "Translation";
-            this.ButtonTranslate.UseVisualStyleBackColor = true;
-            this.ButtonTranslate.Click += new System.EventHandler(this.ButtonTranslate_Click);
-            // 
-            // ButtonRotate
-            // 
-            this.ButtonRotate.Location = new System.Drawing.Point(89, 353);
-            this.ButtonRotate.Name = "ButtonRotate";
-            this.ButtonRotate.Size = new System.Drawing.Size(75, 23);
-            this.ButtonRotate.TabIndex = 2;
-            this.ButtonRotate.Text = "Rotate";
-            this.ButtonRotate.UseVisualStyleBackColor = true;
-            this.ButtonRotate.Click += new System.EventHandler(this.ButtonRotate_Click);
+            this.ButtonScale.Location = new System.Drawing.Point(89, 382);
+            this.ButtonScale.Name = "ButtonScale";
+            this.ButtonScale.Size = new System.Drawing.Size(75, 23);
+            this.ButtonScale.TabIndex = 3;
+            this.ButtonScale.Text = "Scale";
+            this.ButtonScale.UseVisualStyleBackColor = true;
+            this.ButtonScale.Click += new System.EventHandler(this.ButtonScale_Click);
             // 
             // MainForm
             // 
@@ -141,8 +142,8 @@
         private SharpGL.OpenGLControl GLControl;
         private SharpGL.OpenGLControl openGLControl1;
         private System.Windows.Forms.Button ButtonTranslate;
-        private System.Windows.Forms.Button ButtonEditOrigin;
         private System.Windows.Forms.Button ButtonRotate;
+        private System.Windows.Forms.Button ButtonScale;
     }
 }
 

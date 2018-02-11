@@ -44,7 +44,7 @@ namespace LR_2
             gl.BindTexture(OpenGL.GL_TEXTURE_2D, TexturePtr[0]);
         }
 
-        public void UnBind()
+        public void Unbind()
         {
             gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0);
         }
