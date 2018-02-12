@@ -43,7 +43,6 @@ namespace LR_2
 
             gl.ClearColor(0.8f, 0.8f, 0.8f, 1.0f);  // цвет фона
             gl.Disable(OpenGL.GL_DEPTH_TEST);
-            gl.LineWidth(2f);
 
             Center = new Point(GLControl.Width / 2, GLControl.Height / 2);
             Hexagons = new HexagonContainer(GLControl, Center, Color.White);
@@ -75,70 +74,77 @@ namespace LR_2
         // Нажата кнопка мыши -------------------------------------------------
         private void GLControl_MouseDown(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-                switch (Mode)
-                {
-                    case (int)EditMode.Translation:
-                        {
-                            MouseOrigin.X = e.X - Hexagons.Current.Translation.X;
-                            MouseOrigin.Y = H - e.Y - Hexagons.Current.Translation.Y;
-                        }
-                        break;
-                    case (int)EditMode.Rotation:
-                        {
-                            Hexagons.Current.Rotation = GetAngle(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
-                        }
-                        break;
-                    case (int)EditMode.Scaling:
-                        {
-                            MouseOrigin.X = e.X;
-                            MouseOrigin.Y = H - e.Y;
-                            OldScale = Hexagons.Current.Scale;
-                        }
-                        break;
-                }
-
-            if (e.Button == MouseButtons.Right)
+            if (Hexagons.Current != null)
             {
-                Hexagons.Current.Radius = GetDistance(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
-                Hexagons.Current.RenderMode |= Hexagon.RenderFlags.Outline;
+                if (e.Button == MouseButtons.Left)
+                    switch (Mode)
+                    {
+                        case (int)EditMode.Translation:
+                            {
+                                MouseOrigin.X = e.X - Hexagons.Current.Translation.X;
+                                MouseOrigin.Y = H - e.Y - Hexagons.Current.Translation.Y;
+                            }
+                            break;
+                        case (int)EditMode.Rotation:
+                            {
+                                Hexagons.Current.Rotation = GetAngle(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+                            }
+                            break;
+                        case (int)EditMode.Scaling:
+                            {
+                                MouseOrigin.X = e.X;
+                                MouseOrigin.Y = H - e.Y;
+                                OldScale = Hexagons.Current.Scale;
+                            }
+                            break;
+                    }
+
+                if (e.Button == MouseButtons.Right)
+                {
+                    Hexagons.Current.Radius = GetDistance(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+                    Hexagons.Current.RenderMode |= Hexagon.RenderFlags.Outline;
+                }
             }
         }
 
         // Перемещение мыши ---------------------------------------------------
         private void GLControl_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-                switch (Mode)
-                {
-                    case (int)EditMode.Translation:
-                        {
-                            Hexagons.Current.Translation = new Point(e.X - MouseOrigin.X, H - MouseOrigin.Y - e.Y);
-                        }
-                        break;
-                    case (int)EditMode.Rotation:
-                        {
-                            Hexagons.Current.Rotation = GetAngle(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
-                        }
-                        break;
-                    case (int)EditMode.Scaling:
-                        {
-                            Hexagons.Current.Scale = new PointF(
-                                OldScale.X + (e.X - MouseOrigin.X) / 70f,
-                                OldScale.Y + (H - e.Y - MouseOrigin.Y) / 70f);
-                        }
-                        break;
-                }
+            if (Hexagons.Current != null)
+            {
+                if (e.Button == MouseButtons.Left)
+                    switch (Mode)
+                    {
+                        case (int)EditMode.Translation:
+                            {
+                                Hexagons.Current.Translation = new Point(e.X - MouseOrigin.X, H - MouseOrigin.Y - e.Y);
+                            }
+                            break;
+                        case (int)EditMode.Rotation:
+                            {
+                                Hexagons.Current.Rotation = GetAngle(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+                            }
+                            break;
+                        case (int)EditMode.Scaling:
+                            {
+                                Hexagons.Current.Scale = new PointF(
+                                    OldScale.X + (e.X - MouseOrigin.X) / 70f,
+                                    OldScale.Y + (H - e.Y - MouseOrigin.Y) / 70f);
+                            }
+                            break;
+                    }
 
-            if (e.Button == MouseButtons.Right)
-                Hexagons.Current.Radius = GetDistance(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+                if (e.Button == MouseButtons.Right)
+                    Hexagons.Current.Radius = GetDistance(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+            }
         }
 
         // Отпущена кнопка мыши -----------------------------------------------
         private void GLControl_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Right && Mode != (int)EditMode.Scaling)
-                Hexagons.Current.RenderMode ^= Hexagon.RenderFlags.Outline;
+            if (Hexagons.Current != null)
+                if (e.Button == MouseButtons.Right && Mode != (int)EditMode.Scaling)
+                    Hexagons.Current.RenderMode ^= Hexagon.RenderFlags.Outline;
         }
         #endregion
 
@@ -275,27 +281,60 @@ namespace LR_2
         {
             Hexagons.Remove(ObjectsList.SelectedIndex);
             Hexagons.SwitchTo(ObjectsList.SelectedIndex);
-            if (Hexagons.Current == null) ObjectControlsContainer.Enabled = false;
+            if (Hexagons.Current == null)
+                ObjectControlsContainer.Enabled = false;
+            else
+                Hexagons.Current.RenderMode = Hexagon.RenderFlags.Translation;
         }
         #endregion
 
+        #region Панель управления растеризацией
+        private void RasterizeChBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (RasterizeChBox.Checked)
+            {
+                Hexagons.Rasterize = true;
+                foreach (Hexagon H in Hexagons.Items) H.Rasterize();
+                ObjectControlsContainer.Enabled = false;
+                ObjectsContainer.Enabled = false;
+                Mode = (int)EditMode.None;
+            }
+            else
+            {
+                Hexagons.Rasterize = false;
+                foreach (Hexagon H in Hexagons.Items) H.RenderMode = Hexagon.RenderFlags.Hexagon;
+                if (Hexagons.Current != null)
+                    Hexagons.Current.RenderMode = Hexagon.RenderFlags.Translation;
+                ObjectControlsContainer.Enabled = true;
+                ObjectsContainer.Enabled = true;
+                Mode = (int)EditMode.Translation;
+            }
+        }
+        #endregion
+
+        #region Переключатель режима смешения цветов
         // Изменен режим смешения цветов --------------------------------------
         private void ColorMixMode_Changed(object sender, EventArgs e)
         {
             if (ColorMixNoneRB.Checked)
             {
                 gl.Disable(OpenGL.GL_COLOR_LOGIC_OP);
+                gl.ClearColor(0.8f, 0.8f, 0.8f, 1.0f);
             }
             else if (ColorMixOrRB.Checked)
             {
                 gl.LogicOp(OpenGL.GL_OR);
                 gl.Enable(OpenGL.GL_COLOR_LOGIC_OP);
+                gl.ClearColor(0f, 0f, 0f, 1f);
             }
             else
             {
                 gl.LogicOp(OpenGL.GL_NOR);
                 gl.Enable(OpenGL.GL_COLOR_LOGIC_OP);
+                gl.ClearColor(0f, 0f, 0f, 1f);
+                //gl.ClearColor(1f, 1f, 1f, 1f);
             }
         }
+        #endregion
     }
 }

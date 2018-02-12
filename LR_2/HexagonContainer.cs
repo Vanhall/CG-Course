@@ -12,6 +12,8 @@ namespace LR_2
         public BindingList<Hexagon> Items;   // список объектов
         public Color FillColor;              // цвет заливки новых объектов
         public Point Origin;
+        public bool Rasterize;
+        RasterGrid Grid;
 
         // Конструктор --------------------------------------------------------
         public HexagonContainer(OpenGLControl GLControl, Point Origin, Color Color)
@@ -19,15 +21,17 @@ namespace LR_2
             gl = GLControl.OpenGL;
             FillColor = Color;
             this.Origin = Origin;
+            Rasterize = false;
+            Grid = new RasterGrid(GLControl, 3);
 
-            Current = new Hexagon(gl, this.Origin, FillColor);
+            Current = new Hexagon(gl, this.Origin, FillColor, Grid);
             Items = new BindingList<Hexagon> { Current };
         }
 
         // Создание нового объекта --------------------------------------------
         public void Create()
         {
-            Current = new Hexagon(gl, Origin, FillColor);
+            Current = new Hexagon(gl, Origin, FillColor, Grid);
             Items.Add(Current);
         }
 
@@ -52,6 +56,7 @@ namespace LR_2
         public void Render()
         {
             foreach (Hexagon H in Items) H.Render();
+            if (Rasterize) Grid.Render();
         }
     }
 }

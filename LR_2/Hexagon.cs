@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Collections.Generic;
 using SharpGL;
 
 namespace LR_2
@@ -7,6 +8,16 @@ namespace LR_2
     public class Hexagon
     {
         static int hexagonIndex = 0;    // Счетчик созданных объектов
+        RasterGrid raster;
+        public RasterGrid Raster
+        {
+            get => raster;
+            set
+            {
+                raster = value;
+            }
+        }
+
         // Флаги режимов рендеринга
         [Flags] public enum RenderFlags
         {
@@ -17,6 +28,7 @@ namespace LR_2
             TranslationLines = 8,
             RotationLines = 16,
             ScaleArrows = 32,
+            Raster = 64,
             Translation = Center | TranslationLines | Hexagon,
             Rotation = Center | RotationLines | Hexagon,
             Scale = Center | ScaleArrows | Outline | Hexagon
@@ -25,11 +37,12 @@ namespace LR_2
         
         OpenGL gl;
         public Color FillColor;
-        uint[] VBOPtr = new uint[4];            // указатели VBO
+        uint[] VBOPtr = new uint[5];            // указатели VBO
         float[] VBO = new float[32];            // VBO шестигранника
         float[] VBOTransLines = new float[6];   // VBO линий смещения
         float[] VBORotLines = new float[16];    // VBO линий вращения
         float[] VBOScaleArrows;                 // VBO стрелок растяжения
+        List<float> VBORaster;
         public Texture Texture;                 // Текстура
 
         const float minRadius = 20f;            // Минимальный радиус объекта
@@ -93,21 +106,24 @@ namespace LR_2
         #endregion
 
         // Конструктор --------------------------------------------------------
-        public Hexagon(OpenGL GL, Point Center, Color Color)
+        public Hexagon(OpenGL GL, Point Center, Color Color, RasterGrid Raster)
         {
             gl = GL;
             name = String.Format("Object #{0}", ++hexagonIndex);
             translation = Center;
             FillColor = Color;
             radius = minRadius;
-            gl.GenBuffers(4, VBOPtr);
+            gl.GenBuffers(5, VBOPtr);
             Texture = new Texture(gl, @"Textures/default.png");
             scale = new PointF(1f, 1f);
+            raster = Raster;
+            VBORaster = new List<float>();
             GenerateUV();
             UpdateVBO();
             UpdateTranslationVBO();
             UpdateRotationVBO();
             UpdateScaleVBO();
+            UpdateRasterVBO();
         }
 
         #region Генерация VBO
@@ -191,12 +207,90 @@ namespace LR_2
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOScaleArrows, OpenGL.GL_STATIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
+
+        private void UpdateRasterVBO()
+        {
+            VBORaster.Clear();
+            float[] lines = new float[14];
+            for (int i = 0; i < lines.Length; i += 2)
+            {
+                float X = VBO[i + 2], Y = VBO[i + 3], Sx = Scale.X, Sy = Scale.Y;
+                float cos = (float)Math.Cos(rotation * Math.PI / 180.0);
+                float sin = (float)Math.Sin(rotation * Math.PI / 180.0);
+                lines[i] = X*cos*Sx - Y*sin*Sy + translation.X;
+                lines[i + 1] = X*sin*Sx + Y*cos*Sy + translation.Y;
+            }
+
+            for (int i = 0; i < lines.Length - 2; i += 2)
+            {
+                BresenhamLine((int)lines[i], (int)lines[i + 1], (int)lines[i + 2], (int)lines[i + 3]);
+            }
+
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBORaster.ToArray(), OpenGL.GL_DYNAMIC_DRAW);
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
+        }
         #endregion
+
+        public void Rasterize()
+        {
+            UpdateRasterVBO();
+            RenderMode = RenderFlags.Raster;
+        }
+
+        void BresenhamLine(int x0, int y0, int x1, int y1)
+        {
+            void Swap(ref int X, ref int Y)
+            {
+                int Temp = X;
+                X = Y;
+                Y = Temp;
+            }
+            
+            // Проверяем рост отрезка по OX и по OY
+            bool slope = Math.Abs(y1 - y0) > Math.Abs(x1 - x0);
+            if (slope)
+            {
+                Swap(ref x0, ref y0);
+                Swap(ref x1, ref y1);
+            }
+
+            // Если линия растёт не слева направо,
+            // то меняем начало и конец отрезка местами
+            if (x0 > x1)
+            {
+                Swap(ref x0, ref x1);
+                Swap(ref y0, ref y1);
+            }
+
+            if (x0 % raster.CellSize != raster.CellSize / 2)
+                x0 -= (x0 % raster.CellSize) - raster.CellSize / 2;
+            if (y0 % raster.CellSize != raster.CellSize / 2)
+                y0 -= (y0 % raster.CellSize) - raster.CellSize / 2;
+
+            int dx = x1 - x0;
+            int dy = Math.Abs(y1 - y0);
+            int error = dx / 2; // Здесь используется оптимизация с умножением на dx, чтобы избавиться от лишних дробей
+            int ystep = (y0 < y1) ? raster.CellSize : -raster.CellSize; // Выбираем направление роста координаты y
+            int y = y0;
+            for (int x = x0; x <= x1; x += raster.CellSize)
+            {
+                VBORaster.Add(slope ? y : x);
+                VBORaster.Add(slope ? x : y);
+                error -= dy;
+                if (error < 0)
+                {
+                    y += ystep;
+                    error += dx;
+                }
+            }
+        }
 
         // Метод отрисовки ----------------------------------------------------
         public void Render()
         {
             gl.EnableClientState(OpenGL.GL_VERTEX_ARRAY);
+            gl.LineWidth(2f);
 
             // Шестиугольник
             if ((RenderMode & RenderFlags.Hexagon) != 0)
@@ -299,7 +393,17 @@ namespace LR_2
                 gl.DrawArrays(OpenGL.GL_TRIANGLES, 6, 6);
                 gl.PopMatrix();
             }
-            
+
+            // Растеризация
+            if ((RenderMode & RenderFlags.Raster) != 0)
+            {
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
+                gl.Color(FillColor.R, FillColor.G, FillColor.B);
+                gl.PointSize(raster.PixelSize);
+                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+                gl.DrawArrays(OpenGL.GL_POINTS, 0, VBORaster.Count);
+            }
+
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }

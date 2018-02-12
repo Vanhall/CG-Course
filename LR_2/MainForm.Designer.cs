@@ -30,6 +30,10 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.MainPanel = new System.Windows.Forms.Panel();
+            this.ColorMixContainer = new System.Windows.Forms.GroupBox();
+            this.ColorMixNotOrRB = new System.Windows.Forms.RadioButton();
+            this.ColorMixOrRB = new System.Windows.Forms.RadioButton();
+            this.ColorMixNoneRB = new System.Windows.Forms.RadioButton();
             this.ObjectsContainer = new System.Windows.Forms.GroupBox();
             this.ButtonDeleteHexagon = new System.Windows.Forms.Button();
             this.ButtonNewHexagon = new System.Windows.Forms.Button();
@@ -49,22 +53,22 @@
             this.openGLControl1 = new SharpGL.OpenGLControl();
             this.colorDialog = new System.Windows.Forms.ColorDialog();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.ColorMixContainer = new System.Windows.Forms.GroupBox();
-            this.ColorMixNoneRB = new System.Windows.Forms.RadioButton();
-            this.ColorMixOrRB = new System.Windows.Forms.RadioButton();
-            this.ColorMixNotOrRB = new System.Windows.Forms.RadioButton();
+            this.RasterControls = new System.Windows.Forms.GroupBox();
+            this.RasterizeChBox = new System.Windows.Forms.CheckBox();
             this.MainPanel.SuspendLayout();
+            this.ColorMixContainer.SuspendLayout();
             this.ObjectsContainer.SuspendLayout();
             this.ObjectControlsContainer.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.GLControl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).BeginInit();
-            this.ColorMixContainer.SuspendLayout();
+            this.RasterControls.SuspendLayout();
             this.SuspendLayout();
             // 
             // MainPanel
             // 
             this.MainPanel.BackColor = System.Drawing.SystemColors.Control;
+            this.MainPanel.Controls.Add(this.RasterControls);
             this.MainPanel.Controls.Add(this.ColorMixContainer);
             this.MainPanel.Controls.Add(this.ObjectsContainer);
             this.MainPanel.Controls.Add(this.ObjectControlsContainer);
@@ -73,6 +77,52 @@
             this.MainPanel.Name = "MainPanel";
             this.MainPanel.Size = new System.Drawing.Size(164, 729);
             this.MainPanel.TabIndex = 0;
+            // 
+            // ColorMixContainer
+            // 
+            this.ColorMixContainer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ColorMixContainer.Controls.Add(this.ColorMixNotOrRB);
+            this.ColorMixContainer.Controls.Add(this.ColorMixOrRB);
+            this.ColorMixContainer.Controls.Add(this.ColorMixNoneRB);
+            this.ColorMixContainer.Location = new System.Drawing.Point(6, 385);
+            this.ColorMixContainer.Name = "ColorMixContainer";
+            this.ColorMixContainer.Size = new System.Drawing.Size(152, 47);
+            this.ColorMixContainer.TabIndex = 10;
+            this.ColorMixContainer.TabStop = false;
+            this.ColorMixContainer.Text = "Смешивание цветов";
+            // 
+            // ColorMixNotOrRB
+            // 
+            this.ColorMixNotOrRB.AutoSize = true;
+            this.ColorMixNotOrRB.Location = new System.Drawing.Point(104, 19);
+            this.ColorMixNotOrRB.Name = "ColorMixNotOrRB";
+            this.ColorMixNotOrRB.Size = new System.Drawing.Size(44, 17);
+            this.ColorMixNotOrRB.TabIndex = 0;
+            this.ColorMixNotOrRB.Text = "!OR";
+            this.ColorMixNotOrRB.UseVisualStyleBackColor = true;
+            // 
+            // ColorMixOrRB
+            // 
+            this.ColorMixOrRB.AutoSize = true;
+            this.ColorMixOrRB.Location = new System.Drawing.Point(57, 19);
+            this.ColorMixOrRB.Name = "ColorMixOrRB";
+            this.ColorMixOrRB.Size = new System.Drawing.Size(41, 17);
+            this.ColorMixOrRB.TabIndex = 0;
+            this.ColorMixOrRB.Text = "OR";
+            this.ColorMixOrRB.UseVisualStyleBackColor = true;
+            // 
+            // ColorMixNoneRB
+            // 
+            this.ColorMixNoneRB.AutoSize = true;
+            this.ColorMixNoneRB.Checked = true;
+            this.ColorMixNoneRB.Location = new System.Drawing.Point(6, 19);
+            this.ColorMixNoneRB.Name = "ColorMixNoneRB";
+            this.ColorMixNoneRB.Size = new System.Drawing.Size(44, 17);
+            this.ColorMixNoneRB.TabIndex = 0;
+            this.ColorMixNoneRB.TabStop = true;
+            this.ColorMixNoneRB.Text = "Нет";
+            this.ColorMixNoneRB.UseVisualStyleBackColor = true;
             // 
             // ObjectsContainer
             // 
@@ -157,6 +207,7 @@
             // 
             this.ButtonTranslate.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonTranslate.BackColor = System.Drawing.SystemColors.Control;
             this.ButtonTranslate.Location = new System.Drawing.Point(6, 19);
             this.ButtonTranslate.Name = "ButtonTranslate";
             this.ButtonTranslate.Size = new System.Drawing.Size(93, 23);
@@ -301,51 +352,28 @@
             this.openFileDialog.Filter = "PNG Images|*.png";
             this.openFileDialog.InitialDirectory = ".";
             // 
-            // ColorMixContainer
+            // RasterControls
             // 
-            this.ColorMixContainer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            this.RasterControls.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.ColorMixContainer.Controls.Add(this.ColorMixNotOrRB);
-            this.ColorMixContainer.Controls.Add(this.ColorMixOrRB);
-            this.ColorMixContainer.Controls.Add(this.ColorMixNoneRB);
-            this.ColorMixContainer.Location = new System.Drawing.Point(6, 385);
-            this.ColorMixContainer.Name = "ColorMixContainer";
-            this.ColorMixContainer.Size = new System.Drawing.Size(152, 47);
-            this.ColorMixContainer.TabIndex = 10;
-            this.ColorMixContainer.TabStop = false;
-            this.ColorMixContainer.Text = "Смешивание цветов";
+            this.RasterControls.Controls.Add(this.RasterizeChBox);
+            this.RasterControls.Location = new System.Drawing.Point(6, 438);
+            this.RasterControls.Name = "RasterControls";
+            this.RasterControls.Size = new System.Drawing.Size(152, 114);
+            this.RasterControls.TabIndex = 11;
+            this.RasterControls.TabStop = false;
+            this.RasterControls.Text = "Растеризация";
             // 
-            // ColorMixNoneRB
+            // RasterizeChBox
             // 
-            this.ColorMixNoneRB.AutoSize = true;
-            this.ColorMixNoneRB.Checked = true;
-            this.ColorMixNoneRB.Location = new System.Drawing.Point(6, 19);
-            this.ColorMixNoneRB.Name = "ColorMixNoneRB";
-            this.ColorMixNoneRB.Size = new System.Drawing.Size(44, 17);
-            this.ColorMixNoneRB.TabIndex = 0;
-            this.ColorMixNoneRB.TabStop = true;
-            this.ColorMixNoneRB.Text = "Нет";
-            this.ColorMixNoneRB.UseVisualStyleBackColor = true;
-            // 
-            // ColorMixOrRB
-            // 
-            this.ColorMixOrRB.AutoSize = true;
-            this.ColorMixOrRB.Location = new System.Drawing.Point(57, 19);
-            this.ColorMixOrRB.Name = "ColorMixOrRB";
-            this.ColorMixOrRB.Size = new System.Drawing.Size(41, 17);
-            this.ColorMixOrRB.TabIndex = 0;
-            this.ColorMixOrRB.Text = "OR";
-            this.ColorMixOrRB.UseVisualStyleBackColor = true;
-            // 
-            // ColorMixNotOrRB
-            // 
-            this.ColorMixNotOrRB.AutoSize = true;
-            this.ColorMixNotOrRB.Location = new System.Drawing.Point(104, 19);
-            this.ColorMixNotOrRB.Name = "ColorMixNotOrRB";
-            this.ColorMixNotOrRB.Size = new System.Drawing.Size(44, 17);
-            this.ColorMixNotOrRB.TabIndex = 0;
-            this.ColorMixNotOrRB.Text = "!OR";
-            this.ColorMixNotOrRB.UseVisualStyleBackColor = true;
+            this.RasterizeChBox.AutoSize = true;
+            this.RasterizeChBox.Location = new System.Drawing.Point(7, 20);
+            this.RasterizeChBox.Name = "RasterizeChBox";
+            this.RasterizeChBox.Size = new System.Drawing.Size(75, 17);
+            this.RasterizeChBox.TabIndex = 0;
+            this.RasterizeChBox.Text = "Включить";
+            this.RasterizeChBox.UseVisualStyleBackColor = true;
+            this.RasterizeChBox.CheckedChanged += new System.EventHandler(this.RasterizeChBox_CheckedChanged);
             // 
             // MainForm
             // 
@@ -359,13 +387,15 @@
             this.Name = "MainForm";
             this.Text = "Компьютерная графика - Лабораторная работа №2";
             this.MainPanel.ResumeLayout(false);
+            this.ColorMixContainer.ResumeLayout(false);
+            this.ColorMixContainer.PerformLayout();
             this.ObjectsContainer.ResumeLayout(false);
             this.ObjectControlsContainer.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.GLControl)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).EndInit();
-            this.ColorMixContainer.ResumeLayout(false);
-            this.ColorMixContainer.PerformLayout();
+            this.RasterControls.ResumeLayout(false);
+            this.RasterControls.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -396,6 +426,8 @@
         private System.Windows.Forms.RadioButton ColorMixNotOrRB;
         private System.Windows.Forms.RadioButton ColorMixOrRB;
         private System.Windows.Forms.RadioButton ColorMixNoneRB;
+        private System.Windows.Forms.GroupBox RasterControls;
+        private System.Windows.Forms.CheckBox RasterizeChBox;
     }
 }
 
