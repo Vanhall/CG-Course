@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="CompGraphics.ico" />
+    <None Include="Resources\Opengl-logo.small.png" />
     <Content Include="Textures\shiny.png" />
     <None Include="Resources\photosicon.png" />
     <Content Include="Textures\MFWCodingOpenGL.png">

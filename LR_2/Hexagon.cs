@@ -1,54 +1,61 @@
-﻿using System;
-using System.Drawing;
+﻿using SharpGL;
+using System;
 using System.Collections.Generic;
-using SharpGL;
+using System.Drawing;
 
 namespace LR_2
 {
     public class Hexagon
     {
         static int hexagonIndex = 0;    // Счетчик созданных объектов
-        RasterGrid raster;
-        public RasterGrid Raster
-        {
-            get => raster;
-            set
-            {
-                raster = value;
-            }
-        }
 
-        // Флаги режимов рендеринга
+        const float minRadius = 20f;    // Минимальный радиус объекта
+        const int vertexCount = 8;      // Число вершин
+
+        OpenGL gl;
+        public Texture Texture;         // Текстура
+        public RasterGrid Raster;       // Сетка растеризации
+        public Color FillColor;         // Цвет объекта
+
+        /*  Флаги режимов рендеринга  */
         [Flags] public enum RenderFlags
         {
-            None = 0,
-            Hexagon = 1,
-            Outline = 2,
-            Center = 4,
-            TranslationLines = 8,
-            RotationLines = 16,
-            ScaleArrows = 32,
-            Raster = 64,
-            Translation = Center | TranslationLines | Hexagon,
-            Rotation = Center | RotationLines | Hexagon,
-            Scale = Center | ScaleArrows | Outline | Hexagon
+            None = 0,                               // Ничего
+            Hexagon = 1,                            // Шестигранник + текстура
+            Outline = 2,                            // Контур
+            Center = 4,                             // Центральная точка
+            TranslateWidget = 8,                    // Виджет смещения
+            RotateWidget = 16,                      // Виджет вращения
+            ScaleWidget = 32,                       // Виджет растяжения
+            RasterOutline = 64,                     // Растеризованный контур
+            RasterFill = 128,                       // Растеризованная заливка
+            Raster = RasterOutline | RasterFill,    // Включена ли растеризация
+            Translation = Center | TranslateWidget, // Режим "Смещение" (центр + виджет)
+            Rotation = Center | RotateWidget,       // Режим "Вращение" (центр + виджет)
+            Scale = Center | ScaleWidget | Outline  // Режим "Растяжение" (центр + виджет + контур)
         };
-        public RenderFlags RenderMode;  // Флаги режимов рендеринга
-        
-        OpenGL gl;
-        public Color FillColor;
+        public RenderFlags RenderMode;      // Флаги режимов рендеринга
+
+        /*  Цвета  */
+        float[] black = { 0f, 0f, 0f };         // Черный
+        float[] white = { 1f, 1f, 1f };         // Белый
+        float[] red = { 1f, 0f, 0f };           // Красный
+
+        /*  VBO  */
         uint[] VBOPtr = new uint[5];            // указатели VBO
-        float[] VBO = new float[32];            // VBO шестигранника
-        float[] VBOTransLines = new float[6];   // VBO линий смещения
-        float[] VBORotLines = new float[16];    // VBO линий вращения
-        float[] VBOScaleArrows;                 // VBO стрелок растяжения
-        List<float> VBORaster;
-        public Texture Texture;                 // Текстура
+        float[] VBO = new float[32];            // VBO основной
+        float[] VBOTransLines = new float[6];   // VBO виджета смещения
+        float[] VBORotLines = new float[16];    // VBO виджета вращения
+        float[] VBOScaleArrows;                 // VBO виджета растяжения
 
-        const float minRadius = 20f;            // Минимальный радиус объекта
-        const int vertexCount = 8;              // Число вершин
-
-        string name;                            // имя объекта
+        /*  Структуры данных для растеризации  */
+        List<float> VBORaster;          // VBO Растра (сетка пикселей)
+        int pixOutlineCount = 0;        // Кол-во вершин (пикселей) растра
+        HashSet<Point> pixOutline;      // Множество пикселей контура
+        Dictionary<int, int> pixLeft;   // "левые" пиксели
+        Dictionary<int, int> pixRight;  // "правые" пиксели
+        
+        string name;                    // имя объекта
         public string Name
         {
             get => name;
@@ -67,6 +74,8 @@ namespace LR_2
                 else radius = newRadius;
                 UpdateVBO();
                 UpdateRotationVBO();
+                if ((RenderMode & RenderFlags.Raster) != 0)
+                    Rasterize();
             }
         }
 
@@ -79,6 +88,8 @@ namespace LR_2
             {
                 translation = value;
                 UpdateTranslationVBO();
+                if ((RenderMode & RenderFlags.Raster) != 0)
+                    Rasterize();
             }
         }
 
@@ -90,6 +101,8 @@ namespace LR_2
             set
             {
                 rotation = value;
+                if ((RenderMode & RenderFlags.Raster) != 0)
+                    Rasterize();
             }
         }
 
@@ -101,6 +114,8 @@ namespace LR_2
             set
             {
                 scale = value;
+                if ((RenderMode & RenderFlags.Raster) != 0)
+                    Rasterize();
             }
         }
         #endregion
@@ -116,18 +131,20 @@ namespace LR_2
             gl.GenBuffers(5, VBOPtr);
             Texture = new Texture(gl, @"Textures/default.png");
             scale = new PointF(1f, 1f);
-            raster = Raster;
+            this.Raster = Raster;
             VBORaster = new List<float>();
+            pixOutline = new HashSet<Point>();
+            pixLeft = new Dictionary<int, int>();
+            pixRight = new Dictionary<int, int>();
             GenerateUV();
             UpdateVBO();
             UpdateTranslationVBO();
             UpdateRotationVBO();
             UpdateScaleVBO();
-            UpdateRasterVBO();
+            Rasterize();
         }
 
         #region Генерация VBO
-
         // Обновление основного VBO -------------------------------------------
         private void UpdateVBO()
         {
@@ -160,7 +177,7 @@ namespace LR_2
             VBO[31] = VBO[19];
         }
 
-        // Обновление VBO линий смещения --------------------------------------
+        // Обновление VBO виджета смещения ------------------------------------
         private void UpdateTranslationVBO()
         {
             int tX = translation.X, tY = translation.Y;
@@ -175,7 +192,7 @@ namespace LR_2
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
 
-        // Обновление VBO линий угла поворота ---------------------------------
+        // Обновление VBO виджета угла поворота -------------------------------
         private void UpdateRotationVBO()
         {
             VBORotLines[2] = radius;        // VBO радиус-линии
@@ -192,7 +209,7 @@ namespace LR_2
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
 
-        // Обновление VBO стрелок растяжения ----------------------------------
+        // Обновление VBO виджета растяжения ----------------------------------
         private void UpdateScaleVBO()
         {
             // Задаем 4 треугольника
@@ -208,22 +225,56 @@ namespace LR_2
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
 
-        private void UpdateRasterVBO()
+        // Метод растеризации -------------------------------------------------
+        public void Rasterize()
         {
-            VBORaster.Clear();
-            float[] lines = new float[14];
-            for (int i = 0; i < lines.Length; i += 2)
+            VBORaster.Clear();      // Очищаем VBO растра,
+            pixOutline.Clear();     // можество пикселей,
+            pixLeft.Clear();        // словари "левых"
+            pixRight.Clear();       // и "правых" пикселей
+            pixOutlineCount = 0;
+
+            // Высчитываем параметры модельно-видовых преобразований
+            float cos = (float)Math.Cos(rotation * Math.PI / 180.0);
+            float sin = (float)Math.Sin(rotation * Math.PI / 180.0);
+            float Sx = Scale.X, Sy = Scale.Y;
+            float Tx = translation.X, Ty = translation.Y;
+            float x0, y0, x1, y1;       // World-Space координаты
+            int xt0, yt0, xt1, yt1;     // Преобразованные координаты
+
+            // "Ручное" модельно-видовое преобразование (для OXY)
+            void transform(float x, float y, out int xt, out int yt)
             {
-                float X = VBO[i + 2], Y = VBO[i + 3], Sx = Scale.X, Sy = Scale.Y;
-                float cos = (float)Math.Cos(rotation * Math.PI / 180.0);
-                float sin = (float)Math.Sin(rotation * Math.PI / 180.0);
-                lines[i] = X*cos*Sx - Y*sin*Sy + translation.X;
-                lines[i + 1] = X*sin*Sx + Y*cos*Sy + translation.Y;
+                xt = (int)(x * cos * Sx - y * sin * Sy + Tx);
+                yt = (int)(x * sin * Sx + y * cos * Sy + Ty);
             }
 
-            for (int i = 0; i < lines.Length - 2; i += 2)
+            // Растеризуем контур
+            for (int i = 2; i < 13; i += 2)
             {
-                BresenhamLine((int)lines[i], (int)lines[i + 1], (int)lines[i + 2], (int)lines[i + 3]);
+                x0 = VBO[i];
+                y0 = VBO[i + 1];
+                x1 = VBO[i + 2];
+                y1 = VBO[i + 3];
+                transform(x0, y0, out xt0, out yt0);    // Преобразуем
+                transform(x1, y1, out xt1, out yt1);    // координаты и
+                BresenhamLine(xt0, yt0, xt1, yt1);      // растеризуем Брезенхемом
+            }
+
+            // Заливка
+            int step = Raster.CellSize;
+            foreach (int y in pixLeft.Keys) // Для всех пикселей в "левом" словаре берем
+            {                               // соответствующие "правые" и заполняем все что между
+                int x = pixLeft[y];
+                while (x < pixRight[y])
+                {
+                    if (!pixOutline.Contains(new Point(x, y)))  // Учитываем пиксели контура
+                    {
+                        VBORaster.Add(x);
+                        VBORaster.Add(y);
+                    }
+                    x += step;
+                }
             }
 
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
@@ -232,12 +283,7 @@ namespace LR_2
         }
         #endregion
 
-        public void Rasterize()
-        {
-            UpdateRasterVBO();
-            RenderMode = RenderFlags.Raster;
-        }
-
+        // Растеризация отрезка по Брезенхэму (для любого отрезка) ------------
         void BresenhamLine(int x0, int y0, int x1, int y1)
         {
             void Swap(ref int X, ref int Y)
@@ -263,20 +309,45 @@ namespace LR_2
                 Swap(ref y0, ref y1);
             }
 
-            if (x0 % raster.CellSize != raster.CellSize / 2)
-                x0 -= (x0 % raster.CellSize) - raster.CellSize / 2;
-            if (y0 % raster.CellSize != raster.CellSize / 2)
-                y0 -= (y0 % raster.CellSize) - raster.CellSize / 2;
+            // Приводим координаты начала в центр пикселя
+            if (x0 % Raster.CellSize != Raster.CellSize / 2)
+                x0 -= (x0 % Raster.CellSize) - Raster.CellSize / 2;
+            if (y0 % Raster.CellSize != Raster.CellSize / 2)
+                y0 -= (y0 % Raster.CellSize) - Raster.CellSize / 2;
 
             int dx = x1 - x0;
             int dy = Math.Abs(y1 - y0);
-            int error = dx / 2; // Здесь используется оптимизация с умножением на dx, чтобы избавиться от лишних дробей
-            int ystep = (y0 < y1) ? raster.CellSize : -raster.CellSize; // Выбираем направление роста координаты y
+            int error = dx / 2; // Здесь домножаем ошибку на dx, чтобы избавиться от дробей
+            int ystep = (y0 < y1) ? Raster.CellSize : -Raster.CellSize; // Выбираем направление роста координаты y
             int y = y0;
-            for (int x = x0; x <= x1; x += raster.CellSize)
+            for (int x = x0; x <= x1; x += Raster.CellSize)
             {
-                VBORaster.Add(slope ? y : x);
-                VBORaster.Add(slope ? x : y);
+                Point Pixel = new Point(slope ? y : x, slope ? x : y);
+
+                // Заносим в "левый" словарь
+                if (pixLeft.ContainsKey(Pixel.Y))
+                {
+                    if (pixLeft[Pixel.Y] > Pixel.X) pixLeft[Pixel.Y] = Pixel.X;
+                }
+                else
+                    pixLeft.Add(Pixel.Y, Pixel.X);
+
+                // Заносим в "правый" словарь
+                if (pixRight.ContainsKey(Pixel.Y))
+                {
+                    if (pixRight[Pixel.Y] < Pixel.X) pixRight[Pixel.Y] = Pixel.X;
+                }
+                else
+                    pixRight.Add(Pixel.Y, Pixel.X);
+
+                // Если такого пикселя еще нет, добавляем его в VBO
+                if (pixOutline.Add(Pixel))
+                {
+                    VBORaster.Add(Pixel.X);
+                    VBORaster.Add(Pixel.Y);
+                    pixOutlineCount++;
+                }
+
                 error -= dy;
                 if (error < 0)
                 {
@@ -303,7 +374,6 @@ namespace LR_2
 
                 gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
                 gl.TexCoordPointer(2, OpenGL.GL_FLOAT, 0, (IntPtr)(16 * sizeof(float)));
-
                 gl.EnableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
 
                 gl.PushMatrix();
@@ -314,48 +384,78 @@ namespace LR_2
                 gl.PopMatrix();
 
                 Texture.Unbind();
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
                 gl.Disable(OpenGL.GL_TEXTURE_2D);
                 gl.DisableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
+            }
+
+            // Растеризация (контур)
+            if ((RenderMode & RenderFlags.RasterOutline) != 0)
+            {
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
+                gl.Color(FillColor.R, FillColor.G, FillColor.B);
+                gl.PointSize(Raster.PixelSize);
+                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+                gl.DrawArrays(OpenGL.GL_POINTS, 0, pixOutlineCount);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
+            }
+
+            // Растеризация (заливка)
+            if ((RenderMode & RenderFlags.RasterFill) != 0)
+            {
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
+                gl.Color(FillColor.R, FillColor.G, FillColor.B);
+                gl.PointSize(Raster.PixelSize);
+                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+                gl.DrawArrays(OpenGL.GL_POINTS, 0, VBORaster.Count / 2);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
             
             // Центр
             if ((RenderMode & RenderFlags.Center) != 0)
             {
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
+                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
                 gl.PushMatrix();
                 gl.Translate(translation.X, translation.Y, 0f);
                 gl.PointSize(10f);
-                gl.Color(new float[] { 1f, 1f, 1f });
+                gl.Color(white);
                 gl.DrawArrays(OpenGL.GL_POINTS, 0, 1);
                 gl.PopMatrix();
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
 
             // Контур
             if ((RenderMode & RenderFlags.Outline) != 0)
             {
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
+                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
                 gl.PushMatrix();
                 gl.Translate(translation.X, translation.Y, 0f);
                 gl.Enable(OpenGL.GL_LINE_STIPPLE);
                 gl.LineStipple(1, 0xF0F0);
-                gl.Color(new float[] { 0f, 0f, 0f });
+                gl.Color(black);
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP, 1, 7);
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
                 gl.PopMatrix();
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
 
-            // Линии смещения
-            if ((RenderMode & RenderFlags.TranslationLines) != 0)
+            // Виджет смещения
+            if ((RenderMode & RenderFlags.TranslateWidget) != 0)
             {
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
                 gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
                 gl.Enable(OpenGL.GL_LINE_STIPPLE);
                 gl.LineStipple(1, 0xFFF0);
-                gl.Color(new float[] { 1f, 0f, 0f });
+                gl.Color(red);
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, 3);
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
-            
-            // Линии углов поворота
-            if ((RenderMode & RenderFlags.RotationLines) != 0)
+
+            // Виджет углов поворота
+            if ((RenderMode & RenderFlags.RotateWidget) != 0)
             {
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
                 gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
@@ -364,44 +464,39 @@ namespace LR_2
 
                 gl.PushMatrix();
                 gl.Translate(translation.X, translation.Y, 0f);
-                gl.Color(new float[] { 0f, 0f, 0f });
+                gl.Color(black);
                 gl.DrawArrays(OpenGL.GL_LINES, 0, 2);
-                gl.Color(new float[] { 1f, 0f, 0f });
+                gl.Color(red);
                 gl.Rotate(rotation, 0f, 0f, 1f);
                 gl.DrawArrays(OpenGL.GL_LINES, 2, 6);
                 gl.PopMatrix();
 
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
 
-            // Стрелки смещения
-            if ((RenderMode & RenderFlags.ScaleArrows) != 0)
+            // Виджет растяжения
+            if ((RenderMode & RenderFlags.ScaleWidget) != 0)
             {
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
                 gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+                gl.Color(red);
 
-                gl.Color(new float[] { 1f, 0f, 0f });
+                // "Стрелки" по OY
                 gl.PushMatrix();
                 gl.Translate(translation.X, translation.Y, 0f);
                 gl.Scale(1f, scale.Y, 0f);
                 gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
                 gl.PopMatrix();
 
+                // "Стрелки" по OX
                 gl.PushMatrix();
                 gl.Translate(translation.X, translation.Y, 0f);
                 gl.Scale(scale.X, 1f, 0f);
                 gl.DrawArrays(OpenGL.GL_TRIANGLES, 6, 6);
                 gl.PopMatrix();
-            }
 
-            // Растеризация
-            if ((RenderMode & RenderFlags.Raster) != 0)
-            {
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
-                gl.Color(FillColor.R, FillColor.G, FillColor.B);
-                gl.PointSize(raster.PixelSize);
-                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-                gl.DrawArrays(OpenGL.GL_POINTS, 0, VBORaster.Count);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
 
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);

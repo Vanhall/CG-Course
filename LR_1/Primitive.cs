@@ -62,6 +62,9 @@ namespace CG_Course
         {
             VBO.Add(x);
             VBO.Add(y);
+            VBO.Add(FillColor.R);
+            VBO.Add(FillColor.G);
+            VBO.Add(FillColor.B);
             Coords.Rows.Add(x, y);
             VertexCount++;
             UpdateVBO();
@@ -72,7 +75,7 @@ namespace CG_Course
         {
             if (index >= 0 && index < VBO.Count / 2)
             {
-                VBO.RemoveRange(index * 2, 2);
+                VBO.RemoveRange(index * 2, 5);
                 Coords.Rows.RemoveAt(index);
                 if (--VertexCount == 0) activeVertex = -1;
                 UpdateVBO();
@@ -84,26 +87,55 @@ namespace CG_Course
         {
             if (activeVertex >= 0)
             {
-                VBO[activeVertex * 2] = newX;
-                VBO[activeVertex * 2 + 1] = newY;
+                VBO[activeVertex * 5] = newX;
+                VBO[activeVertex * 5 + 1] = newY;
                 UpdateVBO();
             }
+        }
+
+        // Перекраска вершины -------------------------------------------------
+        public void RecolorVertex(Color Color)
+        {
+            if (activeVertex >= 0)
+            {
+                VBO[activeVertex * 5 + 2] = Color.R;
+                VBO[activeVertex * 5 + 3] = Color.G;
+                VBO[activeVertex * 5 + 4] = Color.B;
+                UpdateVBO();
+            }
+        }
+
+        // Заливка примитива --------------------------------------------------
+        public void Fill(Color Color)
+        {
+            for (int i = 0; i < VertexCount * 5; i += 5)
+            {
+                VBO[i + 2] = Color.R;
+                VBO[i + 3] = Color.G;
+                VBO[i + 4] = Color.B;
+            }
+            UpdateVBO();
         }
 
         // Метод отрисовки ----------------------------------------------------
         public void Render()
         {
-            gl.Color(FillColor.R, FillColor.G, FillColor.B);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
-            gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+            gl.VertexPointer(2, OpenGL.GL_FLOAT, 5 * sizeof(float), IntPtr.Zero);
+            gl.ColorPointer(3, OpenGL.GL_FLOAT, 5 * sizeof(float), (IntPtr)(2 * sizeof(float)));
+
             gl.EnableClientState(OpenGL.GL_VERTEX_ARRAY);
+            gl.EnableClientState(OpenGL.GL_COLOR_ARRAY);
+
             gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, VertexCount);
+
+            gl.DisableClientState(OpenGL.GL_COLOR_ARRAY);
 
             // Если объект выбран - рисуем вершины
             if (Active)
             {
                 gl.PointSize(5f);
-                gl.Color(new float[] { 0.9f, 0f, 0f });
+                gl.Color(new float[] { 1f, 0f, 0f });
                 gl.DrawArrays(OpenGL.GL_POINTS, 0, VertexCount);
                 if (activeVertex >= 0)
                 {

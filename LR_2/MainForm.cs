@@ -13,6 +13,7 @@ namespace LR_2
         int Mode = (int)EditMode.None;      // Режим редактирования объекта
 
         HexagonContainer Hexagons;          // Контейнер объектов
+        Hexagon.RenderFlags Widgets, RenderMode;
         Point MouseOrigin, Center;          // Позиция мыши и центр GLControl'а
         PointF OldScale;                    // Для сохранения текущего значения
                                             // растяжения объекта
@@ -27,6 +28,9 @@ namespace LR_2
             ColorMixNoneRB.CheckedChanged += new EventHandler(ColorMixMode_Changed);
             ColorMixOrRB.CheckedChanged += new EventHandler(ColorMixMode_Changed);
             ColorMixNotOrRB.CheckedChanged += new EventHandler(ColorMixMode_Changed);
+
+            RasterizeOutlineRB.CheckedChanged += new EventHandler(RasterizeChBox_CheckedChanged);
+            RasterizeFillRB.CheckedChanged += new EventHandler(RasterizeChBox_CheckedChanged);
         }
 
         #region Обработчики событий OpenGL Control
@@ -47,7 +51,10 @@ namespace LR_2
             Center = new Point(GLControl.Width / 2, GLControl.Height / 2);
             Hexagons = new HexagonContainer(GLControl, Center, Color.White);
             Mode = (int)EditMode.Translation;
-            Hexagons.Current.RenderMode = Hexagon.RenderFlags.Translation;
+            RenderMode = Hexagon.RenderFlags.Hexagon;
+            Widgets = Hexagon.RenderFlags.Translation;
+            Hexagons.RenderMode = RenderMode;
+            Hexagons.Current.RenderMode |= Widgets;
         }
 
         // Отрисовка ----------------------------------------------------------
@@ -55,6 +62,7 @@ namespace LR_2
         {
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT);
             Hexagons.Render();
+            Hexagons.Grid.Resize(GLControl.Width, GLControl.Height);
             gl.Finish();
         }
 
@@ -142,11 +150,10 @@ namespace LR_2
         // Отпущена кнопка мыши -----------------------------------------------
         private void GLControl_MouseUp(object sender, MouseEventArgs e)
         {
-            if (Hexagons.Current != null)
+            if (Hexagons.Current != null && Mode != (int)EditMode.None)
                 if (e.Button == MouseButtons.Right && Mode != (int)EditMode.Scaling)
                     Hexagons.Current.RenderMode ^= Hexagon.RenderFlags.Outline;
         }
-        #endregion
 
         #region Вспомогательное
         // Расстояние между двумя точками -------------------------------------
@@ -168,28 +175,33 @@ namespace LR_2
             return (float)angle;
         }
         #endregion
+        #endregion
 
         #region Панель редактирования активного объекта
+
         #region Кнопки модельно-видовых преобразований
         // Смещение -----------------------------------------------------------
         private void ButtonTranslate_Click(object sender, EventArgs e)
         {
             Mode = (int)EditMode.Translation;
-            Hexagons.Current.RenderMode = Hexagon.RenderFlags.Translation;
+            Widgets = Hexagon.RenderFlags.Translation;
+            Hexagons.Current.RenderMode = RenderMode | Widgets;
         }
 
         // Поворот ------------------------------------------------------------
         private void ButtonRotate_Click(object sender, EventArgs e)
         {
             Mode = (int)EditMode.Rotation;
-            Hexagons.Current.RenderMode = Hexagon.RenderFlags.Rotation;
+            Widgets = Hexagon.RenderFlags.Rotation;
+            Hexagons.Current.RenderMode = RenderMode | Widgets;
         }
 
         // Растяжение ---------------------------------------------------------
         private void ButtonScale_Click(object sender, EventArgs e)
         {
             Mode = (int)EditMode.Scaling;
-            Hexagons.Current.RenderMode = Hexagon.RenderFlags.Scale;
+            Widgets = Hexagon.RenderFlags.Scale;
+            Hexagons.Current.RenderMode = RenderMode | Widgets;
         }
 
         // Кнопки сброса соответствующих преобразований -----------------------
@@ -235,22 +247,9 @@ namespace LR_2
         // Выбран другой объект -----------------------------------------------
         private void ObjectsList_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Hexagons.Current.RenderMode = Hexagon.RenderFlags.Hexagon;
             Hexagons.SwitchTo(ObjectsList.SelectedIndex);
             ColorSquare.BackColor = Hexagons.Current.FillColor;
             colorDialog.Color = Hexagons.Current.FillColor;
-            switch (Mode)
-            {
-                case (int)EditMode.Translation:
-                    Hexagons.Current.RenderMode = Hexagon.RenderFlags.Translation;
-                    break;
-                case (int)EditMode.Rotation:
-                    Hexagons.Current.RenderMode = Hexagon.RenderFlags.Rotation;
-                    break;
-                case (int)EditMode.Scaling:
-                    Hexagons.Current.RenderMode = Hexagon.RenderFlags.Scale;
-                    break;
-            }
         }
 
         // Создание нового объекта --------------------------------------------
@@ -258,20 +257,8 @@ namespace LR_2
         {
             Hexagons.FillColor = colorDialog.Color;
             Hexagons.Origin = Center;
-            if (Hexagons.Current != null) Hexagons.Current.RenderMode = Hexagon.RenderFlags.Hexagon;
             Hexagons.Create();
-            switch (Mode)
-            {
-                case (int)EditMode.Translation:
-                    Hexagons.Current.RenderMode = Hexagon.RenderFlags.Translation;
-                    break;
-                case (int)EditMode.Rotation:
-                    Hexagons.Current.RenderMode = Hexagon.RenderFlags.Rotation;
-                    break;
-                case (int)EditMode.Scaling:
-                    Hexagons.Current.RenderMode = Hexagon.RenderFlags.Scale;
-                    break;
-            }
+            Hexagons.Current.RenderMode |= Widgets;
             ObjectsList.SelectedIndex = ObjectsList.Items.Count - 1;
             ObjectControlsContainer.Enabled = true;
         }
@@ -283,32 +270,48 @@ namespace LR_2
             Hexagons.SwitchTo(ObjectsList.SelectedIndex);
             if (Hexagons.Current == null)
                 ObjectControlsContainer.Enabled = false;
-            else
-                Hexagons.Current.RenderMode = Hexagon.RenderFlags.Translation;
         }
         #endregion
 
         #region Панель управления растеризацией
+        // Включена/отключена растеризация или изменен ее режим -------------
         private void RasterizeChBox_CheckedChanged(object sender, EventArgs e)
         {
             if (RasterizeChBox.Checked)
             {
-                Hexagons.Rasterize = true;
-                foreach (Hexagon H in Hexagons.Items) H.Rasterize();
-                ObjectControlsContainer.Enabled = false;
-                ObjectsContainer.Enabled = false;
-                Mode = (int)EditMode.None;
+                Hexagons.Rasterize(true);
+                if (RasterizeOutlineRB.Checked)
+                {
+                    RenderMode = Hexagon.RenderFlags.RasterOutline;
+                    Hexagons.RenderMode = RenderMode;
+                }
+                else
+                {
+                    RenderMode = Hexagon.RenderFlags.RasterFill;
+                    Hexagons.RenderMode = RenderMode;
+                }
             }
             else
             {
-                Hexagons.Rasterize = false;
-                foreach (Hexagon H in Hexagons.Items) H.RenderMode = Hexagon.RenderFlags.Hexagon;
-                if (Hexagons.Current != null)
-                    Hexagons.Current.RenderMode = Hexagon.RenderFlags.Translation;
-                ObjectControlsContainer.Enabled = true;
-                ObjectsContainer.Enabled = true;
-                Mode = (int)EditMode.Translation;
+                Hexagons.Rasterize(false);
+                RenderMode = Hexagon.RenderFlags.Hexagon;
+                Hexagons.RenderMode = RenderMode;
             }
+
+            if (Hexagons.Current != null)
+                Hexagons.Current.RenderMode |= Widgets;
+        }
+
+        // Изменен размер пикселя растеризации --------------------------------
+        private void PixelSizeTrackBar_Scroll(object sender, EventArgs e)
+        {
+            int newPixelSize = 3 + 2 * PixelSizeTrackBar.Value;
+            PixelSizeLabel.Text = newPixelSize + " px";
+            Hexagons.Grid.PixelSize = newPixelSize;
+            if((Hexagons.RenderMode & Hexagon.RenderFlags.Raster) != 0)
+                Hexagons.Rasterize(true);
+            else
+                Hexagons.Rasterize(false);
         }
         #endregion
 
@@ -332,7 +335,6 @@ namespace LR_2
                 gl.LogicOp(OpenGL.GL_NOR);
                 gl.Enable(OpenGL.GL_COLOR_LOGIC_OP);
                 gl.ClearColor(0f, 0f, 0f, 1f);
-                //gl.ClearColor(1f, 1f, 1f, 1f);
             }
         }
         #endregion

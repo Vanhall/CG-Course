@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
 using SharpGL;
 
 namespace LR_2
@@ -9,7 +7,7 @@ namespace LR_2
     public class RasterGrid
     {
         OpenGL gl;
-        int pixelSize;
+        int pixelSize;      // Размер пикселя
         public int PixelSize
         {
             get => pixelSize;
@@ -17,17 +15,20 @@ namespace LR_2
             {
                 pixelSize = value;
                 cellSize = value + 1;
+                GenerateGrid();
             }
         }
-        int cellSize;
+
+        int cellSize;       // Размер "ячейки" (пиксель + граница)
         public int CellSize { get => cellSize; }
 
-        int width, height;
-        int gridVertexCount;
+        int width, height;  // Ширина и высота сетки
+        int vertexCount;    // Количество вершин в VBO
 
-        uint[] VBOPtr = new uint[2];
-        List<float> VBOGrid;
+        uint[] VBOPtr = new uint[2];    // Указатель VBO
+        List<float> VBOGrid;            // Список вершин VBO
 
+        // Конструктор --------------------------------------------------------
         public RasterGrid(OpenGLControl GLControl, int PixelSize)
         {
             gl = GLControl.OpenGL;
@@ -41,6 +42,15 @@ namespace LR_2
             GenerateGrid();
         }
 
+        // Изменение размеров сетки -------------------------------------------
+        public void Resize(int Width, int Height)
+        {
+            width = Width;
+            height = Height;
+            GenerateGrid();
+        }
+
+        // Генерация сетки ----------------------------------------------------
         private void GenerateGrid()
         {
             VBOGrid.Clear();
@@ -63,8 +73,10 @@ namespace LR_2
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOGrid.ToArray(), OpenGL.GL_DYNAMIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
 
-            gridVertexCount = VBOGrid.Count / 2;
+            vertexCount = VBOGrid.Count / 2;
         }
+
+        // Метод отрисовки ----------------------------------------------------
         public void Render()
         {
             gl.Color(new float[] { 0.5f, 0.5f, 0.5f });
@@ -73,7 +85,7 @@ namespace LR_2
 
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
             gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-            gl.DrawArrays(OpenGL.GL_LINES, 0, gridVertexCount);
+            gl.DrawArrays(OpenGL.GL_LINES, 0, vertexCount);
             
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);

@@ -7,13 +7,24 @@ namespace LR_2
     class HexagonContainer
     {
         OpenGL gl;
-        public Hexagon Current;              /* выбранный (редактируемый)
-                                                в данный момент объект */
-        public BindingList<Hexagon> Items;   // список объектов
-        public Color FillColor;              // цвет заливки новых объектов
-        public Point Origin;
-        public bool Rasterize;
-        RasterGrid Grid;
+        public Hexagon Current;             /* выбранный (редактируемый)
+                                               в данный момент объект */
+        public BindingList<Hexagon> Items;  // список объектов
+        public Color FillColor;             // цвет заливки новых объектов
+        public Point Origin;                // Центр новых объектов
+        bool renderGrid;                    // Отображать сетку растеризации?
+        public RasterGrid Grid;             // Сетка растеризации
+
+        Hexagon.RenderFlags renderMode;     // Флаги режима отрисовки
+        public Hexagon.RenderFlags RenderMode
+        {
+            get => renderMode;
+            set
+            {
+                renderMode = value;
+                foreach (Hexagon H in Items) H.RenderMode = value;
+            }
+        }
 
         // Конструктор --------------------------------------------------------
         public HexagonContainer(OpenGLControl GLControl, Point Origin, Color Color)
@@ -21,8 +32,8 @@ namespace LR_2
             gl = GLControl.OpenGL;
             FillColor = Color;
             this.Origin = Origin;
-            Rasterize = false;
-            Grid = new RasterGrid(GLControl, 3);
+            renderGrid = false;
+            Grid = new RasterGrid(GLControl, 5);
 
             Current = new Hexagon(gl, this.Origin, FillColor, Grid);
             Items = new BindingList<Hexagon> { Current };
@@ -31,8 +42,20 @@ namespace LR_2
         // Создание нового объекта --------------------------------------------
         public void Create()
         {
-            Current = new Hexagon(gl, Origin, FillColor, Grid);
-            Items.Add(Current);
+            if (Current != null)
+            {
+                Hexagon.RenderFlags oldRenderMode = Current.RenderMode;
+                Current.RenderMode = renderMode;
+                Current = new Hexagon(gl, Origin, FillColor, Grid);
+                Items.Add(Current);
+                Current.RenderMode = oldRenderMode;
+            }
+            else
+            {
+                Current = new Hexagon(gl, Origin, FillColor, Grid);
+                Current.RenderMode = renderMode;
+                Items.Add(Current);
+            }
         }
 
         // Удаление текущего объекта ------------------------------------------
@@ -47,16 +70,25 @@ namespace LR_2
         {
             if (index >= 0 && index < Items.Count)
             {
-                Current.RenderMode = Hexagon.RenderFlags.Hexagon;
+                Hexagon.RenderFlags oldRenderMode = Current.RenderMode;
+                Current.RenderMode = renderMode;
                 Current = Items[index];
+                Current.RenderMode = oldRenderMode;
             }
+        }
+
+        // Перерасчет растеризации объектов ----------------------------------
+        public void Rasterize(bool RenderGrid)
+        {
+            renderGrid = RenderGrid;
+            foreach (Hexagon H in Items) H.Rasterize();
         }
 
         // Метод отрисовки ----------------------------------------------------
         public void Render()
         {
             foreach (Hexagon H in Items) H.Render();
-            if (Rasterize) Grid.Render();
+            if (renderGrid) Grid.Render();
         }
     }
 }

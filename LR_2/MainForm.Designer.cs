@@ -30,6 +30,10 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.MainPanel = new System.Windows.Forms.Panel();
+            this.RasterControls = new System.Windows.Forms.GroupBox();
+            this.RasterizeFillRB = new System.Windows.Forms.RadioButton();
+            this.RasterizeOutlineRB = new System.Windows.Forms.RadioButton();
+            this.RasterizeChBox = new System.Windows.Forms.CheckBox();
             this.ColorMixContainer = new System.Windows.Forms.GroupBox();
             this.ColorMixNotOrRB = new System.Windows.Forms.RadioButton();
             this.ColorMixOrRB = new System.Windows.Forms.RadioButton();
@@ -39,7 +43,6 @@
             this.ButtonNewHexagon = new System.Windows.Forms.Button();
             this.ObjectsList = new System.Windows.Forms.ListBox();
             this.ObjectControlsContainer = new System.Windows.Forms.GroupBox();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.ButtonTranslate = new System.Windows.Forms.Button();
             this.ButtonResetScale = new System.Windows.Forms.Button();
             this.ButtonRotate = new System.Windows.Forms.Button();
@@ -53,21 +56,27 @@
             this.openGLControl1 = new SharpGL.OpenGLControl();
             this.colorDialog = new System.Windows.Forms.ColorDialog();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.RasterControls = new System.Windows.Forms.GroupBox();
-            this.RasterizeChBox = new System.Windows.Forms.CheckBox();
+            this.PixelSizeTrackBar = new System.Windows.Forms.TrackBar();
+            this.PixelSizeTitle = new System.Windows.Forms.Label();
+            this.PixelSizeLabel = new System.Windows.Forms.Label();
+            this.pictureBox2 = new System.Windows.Forms.PictureBox();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.MainPanel.SuspendLayout();
+            this.RasterControls.SuspendLayout();
             this.ColorMixContainer.SuspendLayout();
             this.ObjectsContainer.SuspendLayout();
             this.ObjectControlsContainer.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.GLControl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).BeginInit();
-            this.RasterControls.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PixelSizeTrackBar)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // MainPanel
             // 
             this.MainPanel.BackColor = System.Drawing.SystemColors.Control;
+            this.MainPanel.Controls.Add(this.pictureBox2);
             this.MainPanel.Controls.Add(this.RasterControls);
             this.MainPanel.Controls.Add(this.ColorMixContainer);
             this.MainPanel.Controls.Add(this.ObjectsContainer);
@@ -77,6 +86,56 @@
             this.MainPanel.Name = "MainPanel";
             this.MainPanel.Size = new System.Drawing.Size(164, 729);
             this.MainPanel.TabIndex = 0;
+            // 
+            // RasterControls
+            // 
+            this.RasterControls.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.RasterControls.Controls.Add(this.PixelSizeLabel);
+            this.RasterControls.Controls.Add(this.PixelSizeTitle);
+            this.RasterControls.Controls.Add(this.PixelSizeTrackBar);
+            this.RasterControls.Controls.Add(this.RasterizeFillRB);
+            this.RasterControls.Controls.Add(this.RasterizeOutlineRB);
+            this.RasterControls.Controls.Add(this.RasterizeChBox);
+            this.RasterControls.Location = new System.Drawing.Point(6, 438);
+            this.RasterControls.Name = "RasterControls";
+            this.RasterControls.Size = new System.Drawing.Size(152, 141);
+            this.RasterControls.TabIndex = 11;
+            this.RasterControls.TabStop = false;
+            this.RasterControls.Text = "Растеризация";
+            // 
+            // RasterizeFillRB
+            // 
+            this.RasterizeFillRB.AutoSize = true;
+            this.RasterizeFillRB.Location = new System.Drawing.Point(73, 44);
+            this.RasterizeFillRB.Name = "RasterizeFillRB";
+            this.RasterizeFillRB.Size = new System.Drawing.Size(68, 17);
+            this.RasterizeFillRB.TabIndex = 2;
+            this.RasterizeFillRB.Text = "Заливка";
+            this.RasterizeFillRB.UseVisualStyleBackColor = true;
+            // 
+            // RasterizeOutlineRB
+            // 
+            this.RasterizeOutlineRB.AutoSize = true;
+            this.RasterizeOutlineRB.Checked = true;
+            this.RasterizeOutlineRB.Location = new System.Drawing.Point(6, 44);
+            this.RasterizeOutlineRB.Name = "RasterizeOutlineRB";
+            this.RasterizeOutlineRB.Size = new System.Drawing.Size(60, 17);
+            this.RasterizeOutlineRB.TabIndex = 1;
+            this.RasterizeOutlineRB.TabStop = true;
+            this.RasterizeOutlineRB.Text = "Контур";
+            this.RasterizeOutlineRB.UseVisualStyleBackColor = true;
+            // 
+            // RasterizeChBox
+            // 
+            this.RasterizeChBox.AutoSize = true;
+            this.RasterizeChBox.Location = new System.Drawing.Point(7, 20);
+            this.RasterizeChBox.Name = "RasterizeChBox";
+            this.RasterizeChBox.Size = new System.Drawing.Size(75, 17);
+            this.RasterizeChBox.TabIndex = 0;
+            this.RasterizeChBox.Text = "Включить";
+            this.RasterizeChBox.UseVisualStyleBackColor = true;
+            this.RasterizeChBox.CheckedChanged += new System.EventHandler(this.RasterizeChBox_CheckedChanged);
             // 
             // ColorMixContainer
             // 
@@ -192,16 +251,7 @@
             this.ObjectControlsContainer.Size = new System.Drawing.Size(152, 165);
             this.ObjectControlsContainer.TabIndex = 8;
             this.ObjectControlsContainer.TabStop = false;
-            this.ObjectControlsContainer.Text = "Преобразования";
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Image = global::LR_2.Properties.Resources.photosicon;
-            this.pictureBox1.Location = new System.Drawing.Point(5, 133);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(23, 23);
-            this.pictureBox1.TabIndex = 10;
-            this.pictureBox1.TabStop = false;
+            this.ObjectControlsContainer.Text = "Изменение объекта";
             // 
             // ButtonTranslate
             // 
@@ -352,28 +402,56 @@
             this.openFileDialog.Filter = "PNG Images|*.png";
             this.openFileDialog.InitialDirectory = ".";
             // 
-            // RasterControls
+            // PixelSizeTrackBar
             // 
-            this.RasterControls.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            this.PixelSizeTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.RasterControls.Controls.Add(this.RasterizeChBox);
-            this.RasterControls.Location = new System.Drawing.Point(6, 438);
-            this.RasterControls.Name = "RasterControls";
-            this.RasterControls.Size = new System.Drawing.Size(152, 114);
-            this.RasterControls.TabIndex = 11;
-            this.RasterControls.TabStop = false;
-            this.RasterControls.Text = "Растеризация";
+            this.PixelSizeTrackBar.LargeChange = 1;
+            this.PixelSizeTrackBar.Location = new System.Drawing.Point(7, 84);
+            this.PixelSizeTrackBar.Maximum = 3;
+            this.PixelSizeTrackBar.Name = "PixelSizeTrackBar";
+            this.PixelSizeTrackBar.Size = new System.Drawing.Size(104, 45);
+            this.PixelSizeTrackBar.TabIndex = 3;
+            this.PixelSizeTrackBar.TickStyle = System.Windows.Forms.TickStyle.Both;
+            this.PixelSizeTrackBar.Value = 1;
+            this.PixelSizeTrackBar.Scroll += new System.EventHandler(this.PixelSizeTrackBar_Scroll);
             // 
-            // RasterizeChBox
+            // PixelSizeTitle
             // 
-            this.RasterizeChBox.AutoSize = true;
-            this.RasterizeChBox.Location = new System.Drawing.Point(7, 20);
-            this.RasterizeChBox.Name = "RasterizeChBox";
-            this.RasterizeChBox.Size = new System.Drawing.Size(75, 17);
-            this.RasterizeChBox.TabIndex = 0;
-            this.RasterizeChBox.Text = "Включить";
-            this.RasterizeChBox.UseVisualStyleBackColor = true;
-            this.RasterizeChBox.CheckedChanged += new System.EventHandler(this.RasterizeChBox_CheckedChanged);
+            this.PixelSizeTitle.AutoSize = true;
+            this.PixelSizeTitle.Location = new System.Drawing.Point(7, 68);
+            this.PixelSizeTitle.Name = "PixelSizeTitle";
+            this.PixelSizeTitle.Size = new System.Drawing.Size(94, 13);
+            this.PixelSizeTitle.TabIndex = 4;
+            this.PixelSizeTitle.Text = "Размер пикселя:";
+            // 
+            // PixelSizeLabel
+            // 
+            this.PixelSizeLabel.AutoSize = true;
+            this.PixelSizeLabel.Location = new System.Drawing.Point(118, 96);
+            this.PixelSizeLabel.Name = "PixelSizeLabel";
+            this.PixelSizeLabel.Size = new System.Drawing.Size(27, 13);
+            this.PixelSizeLabel.TabIndex = 5;
+            this.PixelSizeLabel.Text = "5 px";
+            // 
+            // pictureBox2
+            // 
+            this.pictureBox2.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.pictureBox2.Image = global::LR_2.Properties.Resources.Opengl_logo_small;
+            this.pictureBox2.Location = new System.Drawing.Point(33, 674);
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.Size = new System.Drawing.Size(100, 43);
+            this.pictureBox2.TabIndex = 12;
+            this.pictureBox2.TabStop = false;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = global::LR_2.Properties.Resources.photosicon;
+            this.pictureBox1.Location = new System.Drawing.Point(5, 133);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(23, 23);
+            this.pictureBox1.TabIndex = 10;
+            this.pictureBox1.TabStop = false;
             // 
             // MainForm
             // 
@@ -387,15 +465,17 @@
             this.Name = "MainForm";
             this.Text = "Компьютерная графика - Лабораторная работа №2";
             this.MainPanel.ResumeLayout(false);
+            this.RasterControls.ResumeLayout(false);
+            this.RasterControls.PerformLayout();
             this.ColorMixContainer.ResumeLayout(false);
             this.ColorMixContainer.PerformLayout();
             this.ObjectsContainer.ResumeLayout(false);
             this.ObjectControlsContainer.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.GLControl)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).EndInit();
-            this.RasterControls.ResumeLayout(false);
-            this.RasterControls.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PixelSizeTrackBar)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -428,6 +508,12 @@
         private System.Windows.Forms.RadioButton ColorMixNoneRB;
         private System.Windows.Forms.GroupBox RasterControls;
         private System.Windows.Forms.CheckBox RasterizeChBox;
+        private System.Windows.Forms.RadioButton RasterizeFillRB;
+        private System.Windows.Forms.RadioButton RasterizeOutlineRB;
+        private System.Windows.Forms.Label PixelSizeLabel;
+        private System.Windows.Forms.Label PixelSizeTitle;
+        private System.Windows.Forms.TrackBar PixelSizeTrackBar;
+        private System.Windows.Forms.PictureBox pictureBox2;
     }
 }
 

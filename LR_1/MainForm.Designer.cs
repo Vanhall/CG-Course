@@ -31,6 +31,8 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.GLControl = new SharpGL.OpenGLControl();
             this.ControlPanel = new System.Windows.Forms.Panel();
+            this.WireframeChkBox = new System.Windows.Forms.CheckBox();
+            this.ButtonRemoveVertex = new System.Windows.Forms.Button();
             this.OpenGLLogo = new System.Windows.Forms.PictureBox();
             this.CoordsDataGrid = new System.Windows.Forms.DataGridView();
             this.ButtonRemovePrimitive = new System.Windows.Forms.Button();
@@ -39,8 +41,8 @@
             this.ColorSquare = new System.Windows.Forms.Panel();
             this.ButtonColorPick = new System.Windows.Forms.Button();
             this.colorDialog = new System.Windows.Forms.ColorDialog();
-            this.ButtonRemoveVertex = new System.Windows.Forms.Button();
-            this.WireframeChkBox = new System.Windows.Forms.CheckBox();
+            this.ButtonFill = new System.Windows.Forms.Button();
+            this.ButtonRecolorVertex = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.GLControl)).BeginInit();
             this.ControlPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.OpenGLLogo)).BeginInit();
@@ -71,7 +73,9 @@
             // ControlPanel
             // 
             this.ControlPanel.BackColor = System.Drawing.SystemColors.Control;
+            this.ControlPanel.Controls.Add(this.ButtonFill);
             this.ControlPanel.Controls.Add(this.WireframeChkBox);
+            this.ControlPanel.Controls.Add(this.ButtonRecolorVertex);
             this.ControlPanel.Controls.Add(this.ButtonRemoveVertex);
             this.ControlPanel.Controls.Add(this.OpenGLLogo);
             this.ControlPanel.Controls.Add(this.CoordsDataGrid);
@@ -85,6 +89,28 @@
             this.ControlPanel.Name = "ControlPanel";
             this.ControlPanel.Size = new System.Drawing.Size(195, 729);
             this.ControlPanel.TabIndex = 1;
+            // 
+            // WireframeChkBox
+            // 
+            this.WireframeChkBox.AutoSize = true;
+            this.WireframeChkBox.Location = new System.Drawing.Point(106, 132);
+            this.WireframeChkBox.Name = "WireframeChkBox";
+            this.WireframeChkBox.Size = new System.Drawing.Size(74, 17);
+            this.WireframeChkBox.TabIndex = 8;
+            this.WireframeChkBox.Text = "Wireframe";
+            this.WireframeChkBox.UseVisualStyleBackColor = true;
+            this.WireframeChkBox.CheckedChanged += new System.EventHandler(this.WireframeChkBox_CheckedChanged);
+            // 
+            // ButtonRemoveVertex
+            // 
+            this.ButtonRemoveVertex.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.ButtonRemoveVertex.Location = new System.Drawing.Point(106, 606);
+            this.ButtonRemoveVertex.Name = "ButtonRemoveVertex";
+            this.ButtonRemoveVertex.Size = new System.Drawing.Size(82, 35);
+            this.ButtonRemoveVertex.TabIndex = 7;
+            this.ButtonRemoveVertex.Text = "Удалить вершину";
+            this.ButtonRemoveVertex.UseVisualStyleBackColor = true;
+            this.ButtonRemoveVertex.Click += new System.EventHandler(this.ButtonRemoveVertex_Click);
             // 
             // OpenGLLogo
             // 
@@ -102,12 +128,12 @@
             this.CoordsDataGrid.AllowUserToDeleteRows = false;
             this.CoordsDataGrid.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
             this.CoordsDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.CoordsDataGrid.Location = new System.Drawing.Point(6, 139);
+            this.CoordsDataGrid.Location = new System.Drawing.Point(6, 194);
             this.CoordsDataGrid.MultiSelect = false;
             this.CoordsDataGrid.Name = "CoordsDataGrid";
             this.CoordsDataGrid.ReadOnly = true;
             this.CoordsDataGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.CoordsDataGrid.Size = new System.Drawing.Size(182, 493);
+            this.CoordsDataGrid.Size = new System.Drawing.Size(182, 406);
             this.CoordsDataGrid.TabIndex = 5;
             this.CoordsDataGrid.SelectionChanged += new System.EventHandler(this.CoordsDataGrid_SelectionChanged);
             // 
@@ -138,7 +164,7 @@
             this.PrimitivesListBox.FormattingEnabled = true;
             this.PrimitivesListBox.Location = new System.Drawing.Point(6, 12);
             this.PrimitivesListBox.Name = "PrimitivesListBox";
-            this.PrimitivesListBox.Size = new System.Drawing.Size(94, 121);
+            this.PrimitivesListBox.Size = new System.Drawing.Size(94, 160);
             this.PrimitivesListBox.TabIndex = 2;
             this.PrimitivesListBox.SelectedIndexChanged += new System.EventHandler(this.PrimitivesListBox_SelectedIndexChanged);
             // 
@@ -167,27 +193,26 @@
             // 
             this.colorDialog.Color = System.Drawing.Color.Aqua;
             // 
-            // ButtonRemoveVertex
+            // ButtonFill
             // 
-            this.ButtonRemoveVertex.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.ButtonRemoveVertex.Location = new System.Drawing.Point(46, 638);
-            this.ButtonRemoveVertex.Name = "ButtonRemoveVertex";
-            this.ButtonRemoveVertex.Size = new System.Drawing.Size(108, 23);
-            this.ButtonRemoveVertex.TabIndex = 7;
-            this.ButtonRemoveVertex.Text = "Удалить вершину";
-            this.ButtonRemoveVertex.UseVisualStyleBackColor = true;
-            this.ButtonRemoveVertex.Click += new System.EventHandler(this.ButtonRemoveVertex_Click);
+            this.ButtonFill.Location = new System.Drawing.Point(106, 102);
+            this.ButtonFill.Name = "ButtonFill";
+            this.ButtonFill.Size = new System.Drawing.Size(82, 24);
+            this.ButtonFill.TabIndex = 9;
+            this.ButtonFill.Text = "Закрасить";
+            this.ButtonFill.UseVisualStyleBackColor = true;
+            this.ButtonFill.Click += new System.EventHandler(this.ButtonFill_Click);
             // 
-            // WireframeChkBox
+            // ButtonRecolorVertex
             // 
-            this.WireframeChkBox.AutoSize = true;
-            this.WireframeChkBox.Location = new System.Drawing.Point(106, 102);
-            this.WireframeChkBox.Name = "WireframeChkBox";
-            this.WireframeChkBox.Size = new System.Drawing.Size(74, 17);
-            this.WireframeChkBox.TabIndex = 8;
-            this.WireframeChkBox.Text = "Wireframe";
-            this.WireframeChkBox.UseVisualStyleBackColor = true;
-            this.WireframeChkBox.CheckedChanged += new System.EventHandler(this.WireframeChkBox_CheckedChanged);
+            this.ButtonRecolorVertex.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.ButtonRecolorVertex.Location = new System.Drawing.Point(6, 606);
+            this.ButtonRecolorVertex.Name = "ButtonRecolorVertex";
+            this.ButtonRecolorVertex.Size = new System.Drawing.Size(82, 35);
+            this.ButtonRecolorVertex.TabIndex = 7;
+            this.ButtonRecolorVertex.Text = "Закрасить вершину";
+            this.ButtonRecolorVertex.UseVisualStyleBackColor = true;
+            this.ButtonRecolorVertex.Click += new System.EventHandler(this.ButtonRecolorVertex_Click);
             // 
             // MainForm
             // 
@@ -224,6 +249,8 @@
         private System.Windows.Forms.PictureBox OpenGLLogo;
         private System.Windows.Forms.Button ButtonRemoveVertex;
         private System.Windows.Forms.CheckBox WireframeChkBox;
+        private System.Windows.Forms.Button ButtonFill;
+        private System.Windows.Forms.Button ButtonRecolorVertex;
     }
 }
 

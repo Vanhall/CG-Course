@@ -146,5 +146,17 @@ namespace CG_Course
             else
                 gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
         }
+
+        private void ButtonRecolorVertex_Click(object sender, EventArgs e)
+        {
+            if (Primitives.Current != null && CoordsDataGrid.CurrentRow != null)
+                Primitives.Current.RecolorVertex(colorDialog.Color);
+        }
+
+        private void ButtonFill_Click(object sender, EventArgs e)
+        {
+            if (Primitives.Current != null)
+                Primitives.Current.Fill(colorDialog.Color);
+        }
     }
 }

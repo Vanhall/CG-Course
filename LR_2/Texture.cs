@@ -7,8 +7,9 @@ namespace LR_2
     public class Texture
     {
         OpenGL gl;
-        uint[] TexturePtr = new uint[1];
+        uint[] TexturePtr = new uint[1];    // Указатель на текстуру
 
+        // Конструктор --------------------------------------------------------
         public Texture(OpenGL GL, string path)
         {
             gl = GL;
@@ -49,6 +50,7 @@ namespace LR_2
             gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0);
         }
 
+        // Смена картинки -----------------------------------------------------
         public void ChangeImage(string path)
         {
             Bitmap Texture = new Bitmap(path);
