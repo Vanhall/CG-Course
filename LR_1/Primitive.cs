@@ -60,11 +60,12 @@ namespace CG_Course
         // Добавление вершины -------------------------------------------------
         public void AddVertex(float x, float y)
         {
+            float factor = 1f / 255f;
             VBO.Add(x);
             VBO.Add(y);
-            VBO.Add(FillColor.R);
-            VBO.Add(FillColor.G);
-            VBO.Add(FillColor.B);
+            VBO.Add(factor * FillColor.R);
+            VBO.Add(factor * FillColor.G);
+            VBO.Add(factor * FillColor.B);
             Coords.Rows.Add(x, y);
             VertexCount++;
             UpdateVBO();
@@ -73,9 +74,9 @@ namespace CG_Course
         // Удаление вершины ---------------------------------------------------
         public void RemoveVertex(int index)
         {
-            if (index >= 0 && index < VBO.Count / 2)
+            if (index >= 0 && index < VBO.Count / 5)
             {
-                VBO.RemoveRange(index * 2, 5);
+                VBO.RemoveRange(index * 5, 5);
                 Coords.Rows.RemoveAt(index);
                 if (--VertexCount == 0) activeVertex = -1;
                 UpdateVBO();
@@ -96,11 +97,12 @@ namespace CG_Course
         // Перекраска вершины -------------------------------------------------
         public void RecolorVertex(Color Color)
         {
+            float factor = 1f / 255f;
             if (activeVertex >= 0)
             {
-                VBO[activeVertex * 5 + 2] = Color.R;
-                VBO[activeVertex * 5 + 3] = Color.G;
-                VBO[activeVertex * 5 + 4] = Color.B;
+                VBO[activeVertex * 5 + 2] = factor * Color.R;
+                VBO[activeVertex * 5 + 3] = factor * Color.G;
+                VBO[activeVertex * 5 + 4] = factor * Color.B;
                 UpdateVBO();
             }
         }
@@ -108,11 +110,12 @@ namespace CG_Course
         // Заливка примитива --------------------------------------------------
         public void Fill(Color Color)
         {
+            float factor = 1f / 255f;
             for (int i = 0; i < VertexCount * 5; i += 5)
             {
-                VBO[i + 2] = Color.R;
-                VBO[i + 3] = Color.G;
-                VBO[i + 4] = Color.B;
+                VBO[i + 2] = factor * Color.R;
+                VBO[i + 3] = factor * Color.G;
+                VBO[i + 4] = factor * Color.B;
             }
             UpdateVBO();
         }
