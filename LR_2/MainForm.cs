@@ -40,6 +40,7 @@ namespace LR_2
             gl = GLControl.OpenGL;
 
             // Настройка 2D проекции
+            gl.Viewport(0, 0, GLControl.Width, GLControl.Height);
             gl.MatrixMode(OpenGL.GL_PROJECTION);
             gl.LoadIdentity();
             gl.Ortho2D(0, GLControl.Width, 0, GLControl.Height);
@@ -69,6 +70,7 @@ namespace LR_2
         // Изменение размеров окна --------------------------------------------
         private void GLControl_Resized(object sender, EventArgs e)
         {
+            gl.Viewport(0, 0, GLControl.Width, GLControl.Height);
             gl.MatrixMode(OpenGL.GL_PROJECTION);
             gl.LoadIdentity();
             gl.Ortho2D(0, GLControl.Width, 0, GLControl.Height);
@@ -269,7 +271,16 @@ namespace LR_2
             Hexagons.Remove(ObjectsList.SelectedIndex);
             Hexagons.SwitchTo(ObjectsList.SelectedIndex);
             if (Hexagons.Current == null)
+            {
                 ObjectControlsContainer.Enabled = false;
+                ColorSquare.BackColor = Color.White;
+                colorDialog.Color = Color.White;
+            }
+            else
+            {
+                ColorSquare.BackColor = Hexagons.Current.FillColor;
+                colorDialog.Color = Hexagons.Current.FillColor;
+            }
         }
         #endregion
 

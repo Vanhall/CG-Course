@@ -309,11 +309,15 @@ namespace LR_2
                 Swap(ref y0, ref y1);
             }
 
-            // Приводим координаты начала в центр пикселя
+            // Приводим координаты в центр пикселя
             if (x0 % Raster.CellSize != Raster.CellSize / 2)
                 x0 -= (x0 % Raster.CellSize) - Raster.CellSize / 2;
             if (y0 % Raster.CellSize != Raster.CellSize / 2)
                 y0 -= (y0 % Raster.CellSize) - Raster.CellSize / 2;
+            if (x1 % Raster.CellSize != Raster.CellSize / 2)
+                x1 -= (x1 % Raster.CellSize) - Raster.CellSize / 2;
+            if (y1 % Raster.CellSize != Raster.CellSize / 2)
+                y1 -= (y1 % Raster.CellSize) - Raster.CellSize / 2;
 
             int dx = x1 - x0;
             int dy = Math.Abs(y1 - y0);

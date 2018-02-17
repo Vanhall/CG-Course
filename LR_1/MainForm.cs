@@ -33,6 +33,7 @@ namespace CG_Course
             Primitives = new PrimitiveContainer(GLControl, colorDialog.Color);
 
             // Настройка 2D проекции
+            gl.Viewport(0, 0, GLControl.Width, GLControl.Height);
             gl.MatrixMode(OpenGL.GL_PROJECTION);
             gl.LoadIdentity();
             gl.Ortho2D(0, GLControl.Width, 0, GLControl.Height);
@@ -53,6 +54,7 @@ namespace CG_Course
         // Изменение размеров окна --------------------------------------------
         private void GLControl_Resized(object sender, EventArgs e)
         {
+            gl.Viewport(0, 0, GLControl.Width, GLControl.Height);
             gl.MatrixMode(OpenGL.GL_PROJECTION);
             gl.LoadIdentity();
             gl.Ortho2D(0, GLControl.Width, 0, GLControl.Height);
