@@ -16,7 +16,8 @@ namespace CG_Course
         List<float> VBO = new List<float>();        // список координат вершин VBO
         public DataTable Coords = new DataTable();  // таблица для DataGridView
         public bool Active;                         // выбран ли сейчас этот объект
-        public Color FillColor;                     // цвет примитива
+        float colorByteToFloat = 1f / 255f;         // коэффициент для конвертации RGB byte -> float
+
 
         int activeVertex;                           // индекс выбранной вершины
         public int ActiveVertex
@@ -29,18 +30,13 @@ namespace CG_Course
             }
         }
         
-        string name;                                // название объекта
-        public string Name
-        {
-            get => name;
-        }
+        public string Name { get; set; }            // имя объекта
 
         // Конструктор --------------------------------------------------------
         public Primitive(OpenGL GL, Color Color)
         {
             gl = GL;
-            FillColor = Color;
-            name = String.Format("Object #{0}", ++PrimitiveIndex);
+            Name = String.Format("Object #{0}", ++PrimitiveIndex);
             gl.GenBuffers(1, VBOPtr);
             activeVertex = -1;
             Active = true;
@@ -58,15 +54,14 @@ namespace CG_Course
         }
 
         // Добавление вершины -------------------------------------------------
-        public void AddVertex(float x, float y)
+        public void AddVertex(Point Location, Color Color)
         {
-            float factor = 1f / 255f;
-            VBO.Add(x);
-            VBO.Add(y);
-            VBO.Add(factor * FillColor.R);
-            VBO.Add(factor * FillColor.G);
-            VBO.Add(factor * FillColor.B);
-            Coords.Rows.Add(x, y);
+            VBO.Add(Location.X);
+            VBO.Add(Location.Y);
+            VBO.Add(colorByteToFloat * Color.R);
+            VBO.Add(colorByteToFloat * Color.G);
+            VBO.Add(colorByteToFloat * Color.B);
+            Coords.Rows.Add(Location.X, Location.Y);
             VertexCount++;
             UpdateVBO();
         }
@@ -97,12 +92,11 @@ namespace CG_Course
         // Перекраска вершины -------------------------------------------------
         public void RecolorVertex(Color Color)
         {
-            float factor = 1f / 255f;
             if (activeVertex >= 0)
             {
-                VBO[activeVertex * 5 + 2] = factor * Color.R;
-                VBO[activeVertex * 5 + 3] = factor * Color.G;
-                VBO[activeVertex * 5 + 4] = factor * Color.B;
+                VBO[activeVertex * 5 + 2] = colorByteToFloat * Color.R;
+                VBO[activeVertex * 5 + 3] = colorByteToFloat * Color.G;
+                VBO[activeVertex * 5 + 4] = colorByteToFloat * Color.B;
                 UpdateVBO();
             }
         }
@@ -110,12 +104,11 @@ namespace CG_Course
         // Заливка примитива --------------------------------------------------
         public void Fill(Color Color)
         {
-            float factor = 1f / 255f;
             for (int i = 0; i < VertexCount * 5; i += 5)
             {
-                VBO[i + 2] = factor * Color.R;
-                VBO[i + 3] = factor * Color.G;
-                VBO[i + 4] = factor * Color.B;
+                VBO[i + 2] = colorByteToFloat * Color.R;
+                VBO[i + 3] = colorByteToFloat * Color.G;
+                VBO[i + 4] = colorByteToFloat * Color.B;
             }
             UpdateVBO();
         }

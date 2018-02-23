@@ -10,23 +10,21 @@ namespace CG_Course
         public Primitive Current;               /* выбранный (редактируемый)
                                                    в данный момент объект */
         public BindingList<Primitive> Items;    // список объектов
-        public Color FillColor;                 // цвет заливки новых объектов
 
         // Конструктор --------------------------------------------------------
         public PrimitiveContainer(OpenGLControl GLControl, Color Color)
         {
             gl = GLControl.OpenGL;
-            FillColor = Color;
 
-            Current = new Primitive(gl, FillColor);
+            Current = new Primitive(gl, Color);
             Items = new BindingList<Primitive> { Current };
         }
 
         // Создание нового объекта --------------------------------------------
-        public void Create()
+        public void Create(Color Color)
         {
             if (Current != null) Current.Active = false;
-            Current = new Primitive(gl, FillColor);
+            Current = new Primitive(gl, Color);
             Items.Add(Current);
         }
 
