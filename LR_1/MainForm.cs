@@ -49,7 +49,7 @@ namespace CG_Course
             gl.Ortho2D(0, GLControl.Width, 0, GLControl.Height);
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
 
-            gl.ClearColor(0.7f, 0.7f, 0.8f, 1.0f);  // цвет фона
+            gl.ClearColor(1f, 1f, 1f, 1.0f);  // цвет фона
             gl.Disable(OpenGL.GL_DEPTH_TEST);
         }
 

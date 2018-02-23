@@ -131,12 +131,12 @@ namespace CG_Course
             if (Active)
             {
                 gl.PointSize(5f);
-                gl.Color(new float[] { 1f, 0f, 0f });
+                gl.Color(new float[] { 0.8f, 0f, 0f });
                 gl.DrawArrays(OpenGL.GL_POINTS, 0, VertexCount);
                 if (activeVertex >= 0)
                 {
                     gl.PointSize(10f);
-                    gl.Color(new float[] { 1f, 1f, 1f });
+                    gl.Color(new float[] { 1f, 0f, 0f });
                     gl.DrawArrays(OpenGL.GL_POINTS, activeVertex, 1);
                 }
             }

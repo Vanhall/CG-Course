@@ -54,18 +54,18 @@ namespace LR_2
         private void GenerateGrid()
         {
             VBOGrid.Clear();
-            for (int X = 1; X < width; X += cellSize)
+            for (int X = -width/2; X < width/2; X += cellSize)
             {
                 VBOGrid.Add(X);
-                VBOGrid.Add(0);
+                VBOGrid.Add(-height / 2);
                 VBOGrid.Add(X);
-                VBOGrid.Add(height);
+                VBOGrid.Add(height / 2);
             }
-            for (int Y = 0; Y < height; Y += cellSize)
+            for (int Y = -height/2; Y < height/2; Y += cellSize)
             {
-                VBOGrid.Add(0);
+                VBOGrid.Add(-width / 2);
                 VBOGrid.Add(Y);
-                VBOGrid.Add(width);
+                VBOGrid.Add(width / 2);
                 VBOGrid.Add(Y);
             }
 

@@ -8,20 +8,19 @@ namespace LR_2
     public partial class MainForm : Form
     {
         OpenGL gl;
-        int H;
+        int H, W;
         enum EditMode { None, Translation, Rotation, Scaling };
         int Mode = (int)EditMode.None;      // Режим редактирования объекта
 
         HexagonContainer Hexagons;          // Контейнер объектов
-        Hexagon.RenderFlags Widgets, RenderMode;
-        Point MouseOrigin, Center;          // Позиция мыши и центр GLControl'а
+        Hexagon.RenderFlags  RenderMode;
+        TransformWidgets.ActiveWidget ActiveWidget;
+        Point MouseOrigin, CenterOffset;          // Позиция мыши и центр GLControl'а
         PointF OldScale;                    // Для сохранения текущего значения
                                             // растяжения объекта
         public MainForm()
         {
             InitializeComponent();
-            H = GLControl.Height;
-
             ObjectsList.DataSource = Hexagons.Items;
             ObjectsList.DisplayMember = "Name";
 
@@ -38,24 +37,27 @@ namespace LR_2
         private void GLControl_OpenGLInitialized(object sender, EventArgs e)
         {
             gl = GLControl.OpenGL;
+            H = GLControl.Height;
+            W = GLControl.Width;
+            CenterOffset.X = W / 2;
+            CenterOffset.Y = H / 2;
 
             // Настройка 2D проекции
-            gl.Viewport(0, 0, GLControl.Width, GLControl.Height);
             gl.MatrixMode(OpenGL.GL_PROJECTION);
             gl.LoadIdentity();
-            gl.Ortho2D(0, GLControl.Width, 0, GLControl.Height);
+            gl.Ortho2D(-W/2, W/2, -H/2, H/2);
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
 
             gl.ClearColor(0.8f, 0.8f, 0.8f, 1.0f);  // цвет фона
             gl.Disable(OpenGL.GL_DEPTH_TEST);
-
-            Center = new Point(GLControl.Width / 2, GLControl.Height / 2);
-            Hexagons = new HexagonContainer(GLControl, Center, Color.White);
+            
+            Hexagons = new HexagonContainer(GLControl, Color.White);
+            RefreshLabels();
             Mode = (int)EditMode.Translation;
             RenderMode = Hexagon.RenderFlags.Hexagon;
-            Widgets = Hexagon.RenderFlags.Translation;
             Hexagons.RenderMode = RenderMode;
-            Hexagons.Current.RenderMode |= Widgets;
+            ActiveWidget = TransformWidgets.ActiveWidget.Translation;
+            Hexagons.Widgets.Active = ActiveWidget;
         }
 
         // Отрисовка ----------------------------------------------------------
@@ -70,15 +72,20 @@ namespace LR_2
         // Изменение размеров окна --------------------------------------------
         private void GLControl_Resized(object sender, EventArgs e)
         {
-            gl.Viewport(0, 0, GLControl.Width, GLControl.Height);
+            H = GLControl.Height;
+            W = GLControl.Width;
+            CenterOffset.X = W / 2;
+            CenterOffset.Y = H / 2;
+            if (Hexagons.Current != null)
+            {
+                CenterOffset.X += Hexagons.Current.Translation.X;
+                CenterOffset.Y += Hexagons.Current.Translation.Y;
+            }
+
             gl.MatrixMode(OpenGL.GL_PROJECTION);
             gl.LoadIdentity();
-            gl.Ortho2D(0, GLControl.Width, 0, GLControl.Height);
+            gl.Ortho2D(-W / 2, W / 2, -H / 2, H / 2);
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
-            
-            H = GLControl.Height;
-            Center.X = GLControl.Width / 2;
-            Center.Y = GLControl.Height / 2;
         }
 
         // Нажата кнопка мыши -------------------------------------------------
@@ -93,11 +100,17 @@ namespace LR_2
                             {
                                 MouseOrigin.X = e.X - Hexagons.Current.Translation.X;
                                 MouseOrigin.Y = H - e.Y - Hexagons.Current.Translation.Y;
+                                CenterOffset.X = Hexagons.Current.Translation.X + W / 2;
+                                CenterOffset.Y = Hexagons.Current.Translation.Y + H / 2;
+                                Hexagons.Widgets.Translation = Hexagons.Current.Translation;
+                                RefreshLabels();
                             }
                             break;
                         case (int)EditMode.Rotation:
                             {
-                                Hexagons.Current.Rotation = GetAngle(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+                                Hexagons.Current.Rotation = GetAngle(CenterOffset, new Point(e.X, H - e.Y));
+                                Hexagons.Widgets.Rotation = Hexagons.Current.Rotation;
+                                RefreshLabels();
                             }
                             break;
                         case (int)EditMode.Scaling:
@@ -105,14 +118,17 @@ namespace LR_2
                                 MouseOrigin.X = e.X;
                                 MouseOrigin.Y = H - e.Y;
                                 OldScale = Hexagons.Current.Scale;
+                                Hexagons.Widgets.Scale = Hexagons.Current.Scale;
+                                RefreshLabels();
                             }
                             break;
                     }
 
                 if (e.Button == MouseButtons.Right)
                 {
-                    Hexagons.Current.Radius = GetDistance(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+                    Hexagons.Current.Radius = GetDistance(CenterOffset, new Point(e.X, H - e.Y));
                     Hexagons.Current.RenderMode |= Hexagon.RenderFlags.Outline;
+                    Hexagons.Widgets.Radius = Hexagons.Current.Radius;
                 }
             }
         }
@@ -128,11 +144,17 @@ namespace LR_2
                         case (int)EditMode.Translation:
                             {
                                 Hexagons.Current.Translation = new Point(e.X - MouseOrigin.X, H - MouseOrigin.Y - e.Y);
+                                CenterOffset.X = Hexagons.Current.Translation.X + W / 2;
+                                CenterOffset.Y = Hexagons.Current.Translation.Y + H / 2;
+                                Hexagons.Widgets.Translation = Hexagons.Current.Translation;
+                                RefreshLabels();
                             }
                             break;
                         case (int)EditMode.Rotation:
                             {
-                                Hexagons.Current.Rotation = GetAngle(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+                                Hexagons.Current.Rotation = GetAngle(CenterOffset, new Point(e.X, H - e.Y));
+                                Hexagons.Widgets.Rotation = Hexagons.Current.Rotation;
+                                RefreshLabels();
                             }
                             break;
                         case (int)EditMode.Scaling:
@@ -140,12 +162,17 @@ namespace LR_2
                                 Hexagons.Current.Scale = new PointF(
                                     OldScale.X + (e.X - MouseOrigin.X) / 70f,
                                     OldScale.Y + (H - e.Y - MouseOrigin.Y) / 70f);
+                                Hexagons.Widgets.Scale = Hexagons.Current.Scale;
+                                RefreshLabels();
                             }
                             break;
                     }
 
                 if (e.Button == MouseButtons.Right)
-                    Hexagons.Current.Radius = GetDistance(Hexagons.Current.Translation, new Point(e.X, H - e.Y));
+                {
+                    Hexagons.Current.Radius = GetDistance(CenterOffset, new Point(e.X, H - e.Y));
+                    Hexagons.Widgets.Radius = Hexagons.Current.Radius;
+                }
             }
         }
 
@@ -153,7 +180,7 @@ namespace LR_2
         private void GLControl_MouseUp(object sender, MouseEventArgs e)
         {
             if (Hexagons.Current != null && Mode != (int)EditMode.None)
-                if (e.Button == MouseButtons.Right && Mode != (int)EditMode.Scaling)
+                if (e.Button == MouseButtons.Right)
                     Hexagons.Current.RenderMode ^= Hexagon.RenderFlags.Outline;
         }
 
@@ -186,40 +213,48 @@ namespace LR_2
         private void ButtonTranslate_Click(object sender, EventArgs e)
         {
             Mode = (int)EditMode.Translation;
-            Widgets = Hexagon.RenderFlags.Translation;
-            Hexagons.Current.RenderMode = RenderMode | Widgets;
+            ActiveWidget = TransformWidgets.ActiveWidget.Translation;
+            Hexagons.Widgets.Active = ActiveWidget;
         }
 
         // Поворот ------------------------------------------------------------
         private void ButtonRotate_Click(object sender, EventArgs e)
         {
             Mode = (int)EditMode.Rotation;
-            Widgets = Hexagon.RenderFlags.Rotation;
-            Hexagons.Current.RenderMode = RenderMode | Widgets;
+            ActiveWidget = TransformWidgets.ActiveWidget.Rotation;
+            Hexagons.Widgets.Active = ActiveWidget;
         }
 
         // Растяжение ---------------------------------------------------------
         private void ButtonScale_Click(object sender, EventArgs e)
         {
             Mode = (int)EditMode.Scaling;
-            Widgets = Hexagon.RenderFlags.Scale;
-            Hexagons.Current.RenderMode = RenderMode | Widgets;
+            ActiveWidget = TransformWidgets.ActiveWidget.Scale;
+            Hexagons.Widgets.Active = ActiveWidget;
         }
 
         // Кнопки сброса соответствующих преобразований -----------------------
         private void ButtonResetTrans_Click(object sender, EventArgs e)
         {
-            Hexagons.Current.Translation = Center;
+            Hexagons.Current.Translation = new Point(0, 0);
+            Hexagons.Widgets.Translation = new Point(0, 0);
+            CenterOffset.X = W / 2;
+            CenterOffset.Y = H / 2;
+            RefreshLabels();
         }
 
         private void ButtonResetRot_Click(object sender, EventArgs e)
         {
             Hexagons.Current.Rotation = 0f;
+            Hexagons.Widgets.Rotation = 0f;
+            RefreshLabels();
         }
 
         private void ButtonResetScale_Click(object sender, EventArgs e)
         {
             Hexagons.Current.Scale = new PointF(1f, 1f);
+            Hexagons.Widgets.Scale = new PointF(1f, 1f);
+            RefreshLabels();
         }
         #endregion
 
@@ -243,6 +278,26 @@ namespace LR_2
                 ColorSquare.BackColor = colorDialog.Color;
             }
         }
+
+        private void RefreshLabels()
+        {
+            if (Hexagons.Current != null)
+            {
+                TransXLabel.Text = "X:" + Hexagons.Current.Translation.X;
+                TransYLabel.Text = "Y:" + Hexagons.Current.Translation.Y;
+                RotLabel.Text = "DEG:" + Hexagons.Current.Rotation.ToString("F0");
+                ScaleXLabel.Text = "X:" + Hexagons.Current.Scale.X.ToString("F2");
+                ScaleYLabel.Text = "Y:" + Hexagons.Current.Scale.Y.ToString("F2");
+            }
+            else
+            {
+                TransXLabel.Text = "X:---";
+                TransYLabel.Text = "Y:---";
+                RotLabel.Text = "DEG:---";
+                ScaleXLabel.Text = "X:---";
+                ScaleYLabel.Text = "Y:---";
+            }
+        }
         #endregion
 
         #region Панель управления обектами
@@ -252,17 +307,22 @@ namespace LR_2
             Hexagons.SwitchTo(ObjectsList.SelectedIndex);
             ColorSquare.BackColor = Hexagons.Current.FillColor;
             colorDialog.Color = Hexagons.Current.FillColor;
+            CenterOffset.X = Hexagons.Current.Translation.X + W / 2;
+            CenterOffset.Y = Hexagons.Current.Translation.Y + H / 2;
+            RefreshLabels();
         }
 
         // Создание нового объекта --------------------------------------------
         private void ButtonNewHexagon_Click(object sender, EventArgs e)
         {
             Hexagons.FillColor = colorDialog.Color;
-            Hexagons.Origin = Center;
             Hexagons.Create();
-            Hexagons.Current.RenderMode |= Widgets;
+            Hexagons.Widgets.Active = ActiveWidget;
             ObjectsList.SelectedIndex = ObjectsList.Items.Count - 1;
             ObjectControlsContainer.Enabled = true;
+            CenterOffset.X = W / 2;
+            CenterOffset.Y = H / 2;
+            RefreshLabels();
         }
 
         // Удаление активного объекта -----------------------------------------
@@ -275,12 +335,17 @@ namespace LR_2
                 ObjectControlsContainer.Enabled = false;
                 ColorSquare.BackColor = Color.White;
                 colorDialog.Color = Color.White;
+                CenterOffset.X = W / 2;
+                CenterOffset.Y = H / 2;
             }
             else
             {
                 ColorSquare.BackColor = Hexagons.Current.FillColor;
                 colorDialog.Color = Hexagons.Current.FillColor;
+                CenterOffset.X = Hexagons.Current.Translation.X + W / 2;
+                CenterOffset.Y = Hexagons.Current.Translation.Y + H / 2;
             }
+            RefreshLabels();
         }
         #endregion
 
@@ -308,9 +373,6 @@ namespace LR_2
                 RenderMode = Hexagon.RenderFlags.Hexagon;
                 Hexagons.RenderMode = RenderMode;
             }
-
-            if (Hexagons.Current != null)
-                Hexagons.Current.RenderMode |= Widgets;
         }
 
         // Изменен размер пикселя растеризации --------------------------------

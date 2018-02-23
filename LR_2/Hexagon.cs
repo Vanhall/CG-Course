@@ -23,30 +23,20 @@ namespace LR_2
             None = 0,                               // Ничего
             Hexagon = 1,                            // Шестигранник + текстура
             Outline = 2,                            // Контур
-            Center = 4,                             // Центральная точка
-            TranslateWidget = 8,                    // Виджет смещения
-            RotateWidget = 16,                      // Виджет вращения
-            ScaleWidget = 32,                       // Виджет растяжения
-            RasterOutline = 64,                     // Растеризованный контур
-            RasterFill = 128,                       // Растеризованная заливка
+            RasterOutline = 4,                      // Растеризованный контур
+            RasterFill = 8,                         // Растеризованная заливка
             Raster = RasterOutline | RasterFill,    // Включена ли растеризация
-            Translation = Center | TranslateWidget, // Режим "Смещение" (центр + виджет)
-            Rotation = Center | RotateWidget,       // Режим "Вращение" (центр + виджет)
-            Scale = Center | ScaleWidget | Outline  // Режим "Растяжение" (центр + виджет + контур)
         };
         public RenderFlags RenderMode;      // Флаги режимов рендеринга
 
         /*  Цвета  */
         float[] black = { 0f, 0f, 0f };         // Черный
         float[] white = { 1f, 1f, 1f };         // Белый
-        float[] red = { 1f, 0f, 0f };           // Красный
+        //float[] red = { 1f, 0f, 0f };           // Красный
 
         /*  VBO  */
-        uint[] VBOPtr = new uint[5];            // указатели VBO
+        uint[] VBOPtr = new uint[2];            // указатели VBO
         float[] VBO = new float[32];            // VBO основной
-        float[] VBOTransLines = new float[6];   // VBO виджета смещения
-        float[] VBORotLines = new float[16];    // VBO виджета вращения
-        float[] VBOScaleArrows;                 // VBO виджета растяжения
 
         /*  Структуры данных для растеризации  */
         List<float> VBORaster;          // VBO Растра (сетка пикселей)
@@ -73,7 +63,6 @@ namespace LR_2
                 if (newRadius < minRadius) radius = minRadius;
                 else radius = newRadius;
                 UpdateVBO();
-                UpdateRotationVBO();
                 if ((RenderMode & RenderFlags.Raster) != 0)
                     Rasterize();
             }
@@ -87,7 +76,6 @@ namespace LR_2
             set
             {
                 translation = value;
-                UpdateTranslationVBO();
                 if ((RenderMode & RenderFlags.Raster) != 0)
                     Rasterize();
             }
@@ -121,14 +109,14 @@ namespace LR_2
         #endregion
 
         // Конструктор --------------------------------------------------------
-        public Hexagon(OpenGL GL, Point Center, Color Color, RasterGrid Raster)
+        public Hexagon(OpenGL GL, Color Color, RasterGrid Raster)
         {
             gl = GL;
             name = String.Format("Object #{0}", ++hexagonIndex);
-            translation = Center;
+            translation = new Point(0, 0);
             FillColor = Color;
             radius = minRadius;
-            gl.GenBuffers(5, VBOPtr);
+            gl.GenBuffers(2, VBOPtr);
             Texture = new Texture(gl, @"Textures/default.png");
             scale = new PointF(1f, 1f);
             this.Raster = Raster;
@@ -138,9 +126,6 @@ namespace LR_2
             pixRight = new Dictionary<int, int>();
             GenerateUV();
             UpdateVBO();
-            UpdateTranslationVBO();
-            UpdateRotationVBO();
-            UpdateScaleVBO();
             Rasterize();
         }
 
@@ -176,55 +161,7 @@ namespace LR_2
             VBO[30] = VBO[18];
             VBO[31] = VBO[19];
         }
-
-        // Обновление VBO виджета смещения ------------------------------------
-        private void UpdateTranslationVBO()
-        {
-            int tX = translation.X, tY = translation.Y;
-            VBOTransLines[1] = 1;   // Задаем две линии
-            VBOTransLines[2] = tX;  // параллельные OX и OY
-            VBOTransLines[3] = 1;   //          o <-(центр объекта)     
-            VBOTransLines[4] = tX;  //          |
-            VBOTransLines[5] = tY;  // (0,1)----o <-(Х центра,1)
-
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOTransLines, OpenGL.GL_DYNAMIC_DRAW);
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
-        }
-
-        // Обновление VBO виджета угла поворота -------------------------------
-        private void UpdateRotationVBO()
-        {
-            VBORotLines[2] = radius;        // VBO радиус-линии
-            VBORotLines[6] = radius;        // и стрелки для
-            VBORotLines[8] = radius;        // визуализации угла поворота
-            VBORotLines[10] = radius - 10f; //     o
-            VBORotLines[11] = 10f;          //      \
-            VBORotLines[12] = radius;       //o======o
-            VBORotLines[14] = radius - 10f; //      /
-            VBORotLines[15] = -10f;         //     o
-
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBORotLines, OpenGL.GL_DYNAMIC_DRAW);
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
-        }
-
-        // Обновление VBO виджета растяжения ----------------------------------
-        private void UpdateScaleVBO()
-        {
-            // Задаем 4 треугольника
-            VBOScaleArrows = new float[] {
-                -10f, 15f, 0f, 20f, 10f, 15f,       // верхний
-                -10f, -15f, 0f, -20f, 10f, -15f,    // нижний
-                15f, 10f, 20f, 0f, 15f, -10f,       // правый
-                -15f, 10f, -20f, 0f, -15f, -10f     // левый
-            };
-
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOScaleArrows, OpenGL.GL_STATIC_DRAW);
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
-        }
-
+        
         // Метод растеризации -------------------------------------------------
         public void Rasterize()
         {
@@ -277,7 +214,7 @@ namespace LR_2
                 }
             }
 
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBORaster.ToArray(), OpenGL.GL_DYNAMIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
@@ -396,7 +333,7 @@ namespace LR_2
             // Растеризация (контур)
             if ((RenderMode & RenderFlags.RasterOutline) != 0)
             {
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
                 gl.Color(FillColor.R, FillColor.G, FillColor.B);
                 gl.PointSize(Raster.PixelSize);
                 gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
@@ -407,7 +344,7 @@ namespace LR_2
             // Растеризация (заливка)
             if ((RenderMode & RenderFlags.RasterFill) != 0)
             {
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
                 gl.Color(FillColor.R, FillColor.G, FillColor.B);
                 gl.PointSize(Raster.PixelSize);
                 gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
@@ -415,20 +352,6 @@ namespace LR_2
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
             
-            // Центр
-            if ((RenderMode & RenderFlags.Center) != 0)
-            {
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
-                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-                gl.PushMatrix();
-                gl.Translate(translation.X, translation.Y, 0f);
-                gl.PointSize(10f);
-                gl.Color(white);
-                gl.DrawArrays(OpenGL.GL_POINTS, 0, 1);
-                gl.PopMatrix();
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
-            }
-
             // Контур
             if ((RenderMode & RenderFlags.Outline) != 0)
             {
@@ -438,71 +361,13 @@ namespace LR_2
                 gl.Translate(translation.X, translation.Y, 0f);
                 gl.Enable(OpenGL.GL_LINE_STIPPLE);
                 gl.LineStipple(1, 0xF0F0);
-                gl.Color(black);
+                gl.Color(white);
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP, 1, 7);
                 gl.Disable(OpenGL.GL_LINE_STIPPLE);
                 gl.PopMatrix();
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
-
-            // Виджет смещения
-            if ((RenderMode & RenderFlags.TranslateWidget) != 0)
-            {
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
-                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-                gl.Enable(OpenGL.GL_LINE_STIPPLE);
-                gl.LineStipple(1, 0xFFF0);
-                gl.Color(red);
-                gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, 3);
-                gl.Disable(OpenGL.GL_LINE_STIPPLE);
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
-            }
-
-            // Виджет углов поворота
-            if ((RenderMode & RenderFlags.RotateWidget) != 0)
-            {
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
-                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-                gl.Enable(OpenGL.GL_LINE_STIPPLE);
-                gl.LineStipple(1, 0xAFFA);
-
-                gl.PushMatrix();
-                gl.Translate(translation.X, translation.Y, 0f);
-                gl.Color(black);
-                gl.DrawArrays(OpenGL.GL_LINES, 0, 2);
-                gl.Color(red);
-                gl.Rotate(rotation, 0f, 0f, 1f);
-                gl.DrawArrays(OpenGL.GL_LINES, 2, 6);
-                gl.PopMatrix();
-
-                gl.Disable(OpenGL.GL_LINE_STIPPLE);
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
-            }
-
-            // Виджет растяжения
-            if ((RenderMode & RenderFlags.ScaleWidget) != 0)
-            {
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
-                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-                gl.Color(red);
-
-                // "Стрелки" по OY
-                gl.PushMatrix();
-                gl.Translate(translation.X, translation.Y, 0f);
-                gl.Scale(1f, scale.Y, 0f);
-                gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
-                gl.PopMatrix();
-
-                // "Стрелки" по OX
-                gl.PushMatrix();
-                gl.Translate(translation.X, translation.Y, 0f);
-                gl.Scale(scale.X, 1f, 0f);
-                gl.DrawArrays(OpenGL.GL_TRIANGLES, 6, 6);
-                gl.PopMatrix();
-
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
-            }
-
+            
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
