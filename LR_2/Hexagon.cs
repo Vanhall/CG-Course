@@ -23,8 +23,9 @@ namespace LR_2
             None = 0,                               // Ничего
             Hexagon = 1,                            // Шестигранник + текстура
             Outline = 2,                            // Контур
-            RasterOutline = 4,                      // Растеризованный контур
-            RasterFill = 8,                         // Растеризованная заливка
+            RealRasterOutline = 4,                 // Истинный контур объекта
+            RasterOutline = 8,                      // Растеризованный контур
+            RasterFill = 16,                         // Растеризованная заливка
             Raster = RasterOutline | RasterFill,    // Включена ли растеризация
         };
         public RenderFlags RenderMode;      // Флаги режимов рендеринга
@@ -44,6 +45,7 @@ namespace LR_2
         HashSet<Point> pixOutline;      // Множество пикселей контура
         Dictionary<int, int> pixLeft;   // "левые" пиксели
         Dictionary<int, int> pixRight;  // "правые" пиксели
+        Point RasterTrans;              // смещение с учетом центровки
         
         string name;                    // имя объекта
         public string Name
@@ -124,6 +126,7 @@ namespace LR_2
             pixOutline = new HashSet<Point>();
             pixLeft = new Dictionary<int, int>();
             pixRight = new Dictionary<int, int>();
+            RasterTrans = new Point(0, 0);
             GenerateUV();
             UpdateVBO();
             Rasterize();
@@ -171,19 +174,42 @@ namespace LR_2
             pixRight.Clear();       // и "правых" пикселей
             pixOutlineCount = 0;
 
+            // Центрирование точки по пикселю
+            int Center(double x)
+            {
+                int _x = (int)Math.Round(x);
+                int halfCell = Raster.CellSize / 2;
+                int offset = _x % Raster.CellSize;
+                if (offset >= 0)
+                    if (offset == halfCell)
+                        return _x + offset;
+                    else if (offset < halfCell)
+                        return _x - offset;
+                    else
+                        return Raster.CellSize - offset + _x;
+                else
+                    if (offset == -halfCell)
+                        return _x + offset;
+                    else if (offset > -halfCell)
+                        return _x - offset;
+                    else
+                        return -(Raster.CellSize + offset) + _x;
+            }
+
             // Высчитываем параметры модельно-видовых преобразований
-            float cos = (float)Math.Cos(rotation * Math.PI / 180.0);
-            float sin = (float)Math.Sin(rotation * Math.PI / 180.0);
-            float Sx = Scale.X, Sy = Scale.Y;
-            float Tx = translation.X, Ty = translation.Y;
-            float x0, y0, x1, y1;       // World-Space координаты
+            double cos = Math.Cos(rotation * Math.PI / 180.0);
+            double sin = Math.Sin(rotation * Math.PI / 180.0);
+            double Sx = Scale.X, Sy = Scale.Y;
+            double Tx = Center(translation.X), Ty = Center(translation.Y);
+            RasterTrans.X = (int)Tx; RasterTrans.Y = (int)Ty;
+            double x0, y0, x1, y1;       // World-Space координаты
             int xt0, yt0, xt1, yt1;     // Преобразованные координаты
 
             // "Ручное" модельно-видовое преобразование (для OXY)
-            void transform(float x, float y, out int xt, out int yt)
+            void transform(double x, double y, out int xt, out int yt)
             {
-                xt = (int)(x * cos * Sx - y * sin * Sy + Tx);
-                yt = (int)(x * sin * Sx + y * cos * Sy + Ty);
+                xt = Center(x * cos * Sx - y * sin * Sy + Tx);
+                yt = Center(x * sin * Sx + y * cos * Sy + Ty);
             }
 
             // Растеризуем контур
@@ -245,17 +271,7 @@ namespace LR_2
                 Swap(ref x0, ref x1);
                 Swap(ref y0, ref y1);
             }
-
-            // Приводим координаты в центр пикселя
-            if (x0 % Raster.CellSize != Raster.CellSize / 2)
-                x0 -= (x0 % Raster.CellSize) - Raster.CellSize / 2;
-            if (y0 % Raster.CellSize != Raster.CellSize / 2)
-                y0 -= (y0 % Raster.CellSize) - Raster.CellSize / 2;
-            if (x1 % Raster.CellSize != Raster.CellSize / 2)
-                x1 -= (x1 % Raster.CellSize) - Raster.CellSize / 2;
-            if (y1 % Raster.CellSize != Raster.CellSize / 2)
-                y1 -= (y1 % Raster.CellSize) - Raster.CellSize / 2;
-
+            
             int dx = x1 - x0;
             int dy = Math.Abs(y1 - y0);
             int error = dx / 2; // Здесь домножаем ошибку на dx, чтобы избавиться от дробей
@@ -367,7 +383,22 @@ namespace LR_2
                 gl.PopMatrix();
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
-            
+
+            // Центрированный контур
+            if ((RenderMode & RenderFlags.RealRasterOutline) != 0)
+            {
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
+                gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+                gl.PushMatrix();
+                gl.Translate(RasterTrans.X, RasterTrans.Y, 0f);
+                gl.Rotate(rotation, 0f, 0f, 1f);
+                gl.Scale(scale.X, scale.Y, 0f);
+                gl.Color(black);
+                gl.DrawArrays(OpenGL.GL_LINE_STRIP, 1, 7);
+                gl.PopMatrix();
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
+            }
+
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }

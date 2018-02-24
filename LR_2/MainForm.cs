@@ -15,7 +15,7 @@ namespace LR_2
         HexagonContainer Hexagons;          // Контейнер объектов
         Hexagon.RenderFlags  RenderMode;
         TransformWidgets.ActiveWidget ActiveWidget;
-        Point MouseOrigin, CenterOffset;          // Позиция мыши и центр GLControl'а
+        Point MouseOrigin, CenterOffset;    // Позиция мыши и центр GLControl'а
         PointF OldScale;                    // Для сохранения текущего значения
                                             // растяжения объекта
         public MainForm()
@@ -356,14 +356,17 @@ namespace LR_2
             if (RasterizeChBox.Checked)
             {
                 Hexagons.Rasterize(true);
+
                 if (RasterizeOutlineRB.Checked)
                 {
                     RenderMode = Hexagon.RenderFlags.RasterOutline;
+                    RenderMode |= Hexagon.RenderFlags.RealRasterOutline;
                     Hexagons.RenderMode = RenderMode;
                 }
                 else
                 {
                     RenderMode = Hexagon.RenderFlags.RasterFill;
+                    RenderMode |= Hexagon.RenderFlags.RealRasterOutline;
                     Hexagons.RenderMode = RenderMode;
                 }
             }

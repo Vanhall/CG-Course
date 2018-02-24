@@ -54,19 +54,29 @@ namespace LR_2
         private void GenerateGrid()
         {
             VBOGrid.Clear();
-            for (int X = -width/2; X < width/2; X += cellSize)
+            int correction = (width % 2 == 0) ? 1 : 0;
+            for (int X = cellSize/2; X < width/2; X += cellSize)
             {
-                VBOGrid.Add(X);
+                VBOGrid.Add(X + correction);
                 VBOGrid.Add(-height / 2);
-                VBOGrid.Add(X);
+                VBOGrid.Add(X + correction);
+                VBOGrid.Add(height / 2);
+                VBOGrid.Add(-X + correction);
+                VBOGrid.Add(-height / 2);
+                VBOGrid.Add(-X + correction);
                 VBOGrid.Add(height / 2);
             }
-            for (int Y = -height/2; Y < height/2; Y += cellSize)
+
+            for (int Y = cellSize/2; Y < height/2; Y += cellSize)
             {
                 VBOGrid.Add(-width / 2);
                 VBOGrid.Add(Y);
                 VBOGrid.Add(width / 2);
                 VBOGrid.Add(Y);
+                VBOGrid.Add(-width / 2);
+                VBOGrid.Add(-Y);
+                VBOGrid.Add(width / 2);
+                VBOGrid.Add(-Y);
             }
 
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
