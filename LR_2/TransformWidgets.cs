@@ -25,7 +25,7 @@ namespace LR_2
         float[] VBOScaleArrows;                 // VBO виджета растяжения
 
         /*  Цвета  */
-        float[] white = { 1f, 1f, 1f };         // Белый
+        float[] white = { 0.5f, 0.5f, 0.5f };         // Белый
         float[] red = { 1f, 0f, 0f };           // Красный
 
         // Радиус

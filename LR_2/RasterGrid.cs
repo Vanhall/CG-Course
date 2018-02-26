@@ -25,7 +25,7 @@ namespace LR_2
         int width, height;  // Ширина и высота сетки
         int vertexCount;    // Количество вершин в VBO
 
-        uint[] VBOPtr = new uint[2];    // Указатель VBO
+        uint[] VBOPtr = new uint[1];    // Указатель VBO
         List<float> VBOGrid;            // Список вершин VBO
 
         // Конструктор --------------------------------------------------------
@@ -37,7 +37,7 @@ namespace LR_2
             pixelSize = PixelSize;
             cellSize = pixelSize + 1;
 
-            gl.GenBuffers(2, VBOPtr);
+            gl.GenBuffers(1, VBOPtr);
             VBOGrid = new List<float>();
             GenerateGrid();
         }

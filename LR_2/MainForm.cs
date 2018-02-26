@@ -48,7 +48,7 @@ namespace LR_2
             gl.Ortho2D(-W/2, W/2, -H/2, H/2);
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
 
-            gl.ClearColor(0.8f, 0.8f, 0.8f, 1.0f);  // цвет фона
+            gl.ClearColor(1f, 1f, 1f, 1.0f);  // цвет фона
             gl.Disable(OpenGL.GL_DEPTH_TEST);
             
             Hexagons = new HexagonContainer(GLControl, Color.White);
