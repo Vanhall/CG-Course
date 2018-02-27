@@ -154,5 +154,12 @@ namespace LR_3
                 for (int i = 0; i < Dimension; i++) result[i] = vec[i] / l;
             return result;
         }
+
+        public float[] ToArray()
+        {
+            var result = new float[3];
+            for (int i = 0; i < 3; i++) result[i] = (float)vec[i];
+            return result;
+        }
     }
 }

@@ -111,16 +111,19 @@ namespace LR_3
             SetIdentity();
             var c = Math.Cos(angle);
             var s = Math.Sin(angle);
+            double x = Axis[Vector.Axis.X];
+            double y = Axis[Vector.Axis.Y];
+            double z = Axis[Vector.Axis.Z];
 
-            mat[0, 0] = c + (1 - c) * Axis[Vector.Axis.X] * Axis[Vector.Axis.X];
-            mat[0, 1] = (1 - c) * Axis[Vector.Axis.X] * Axis[Vector.Axis.Y] - s * Axis[Vector.Axis.Z];
-            mat[0, 2] = (1 - c) * Axis[Vector.Axis.X] * Axis[Vector.Axis.Z] + s * Axis[Vector.Axis.Y];
-            mat[1, 0] = (1 - c) * Axis[Vector.Axis.X] * Axis[Vector.Axis.Y] + s * Axis[Vector.Axis.Z];
-            mat[1, 1] = c + (1 - c) * Axis[Vector.Axis.Y] * Axis[Vector.Axis.Y];
-            mat[1, 2] = (1 - c) * Axis[Vector.Axis.Z] * Axis[Vector.Axis.Y] - s * Axis[Vector.Axis.X];
-            mat[2, 0] = (1 - c) * Axis[Vector.Axis.X] * Axis[Vector.Axis.Z] - s * Axis[Vector.Axis.Y];
-            mat[2, 1] = (1 - c) * Axis[Vector.Axis.Z] * Axis[Vector.Axis.Y] + s * Axis[Vector.Axis.X];
-            mat[2, 2] = c + (1 - c) * Axis[Vector.Axis.Z] * Axis[Vector.Axis.Z];
+            mat[0, 0] = x * x + (1 - x * x) * c;
+            mat[0, 1] = x * y * (1 - c) - z * s;
+            mat[0, 2] = x * z * (1 - c) + y * s;
+            mat[1, 0] = x * y * (1 - c) + z * s;
+            mat[1, 1] = y * y + (1 - y * y) * c;
+            mat[1, 2] = y * z * (1 - c) - x * s;
+            mat[2, 0] = x * z*(1 - c) - y * s;
+            mat[2, 1] = y * z * (1 - c) + x * s;
+            mat[2, 2] = z * z + (1 - z * z) * c;
         }
     }
 }
