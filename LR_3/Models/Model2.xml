@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<model>
+  <material>
+    <diffuse r="0.7" g="0.5" b="0"/>
+    <specular r="1.0" g="1.0" b="1.0"/>
+    <shinyness value="50.0"/>
+  </material>
+  <section normal="x" up="z">
+    <v x="0" y="0" z="3.0"/>
+    <v x="0" y="2.0" z="0"/>
+    <v x="0" y="2.0" z="-2.0"/>
+    <v x="0" y="-2.0" z="-2.0"/>
+    <v x="0" y="-2.0" z="0"/>
+  </section>
+  <trajectory>
+    <v x="-10.0" y="0" z="0"/>
+    <v x="-7.0" y="-7.0" z="2.0"/>
+    <v x="0" y="-10.0" z="4.0"/>
+    <v x="7.0" y="-7.0" z="6.0"/>
+    <v x="10.0" y="0" z="8.0"/>
+    <v x="7.0" y="7.0" z="11.0"/>
+    <v x="0" y="10.0" z="15.0"/>
+    <v x="-7.0" y="7.0" z="20.0"/>
+    <v x="-10.0" y="0" z="26.0"/>
+  </trajectory>
+</model>

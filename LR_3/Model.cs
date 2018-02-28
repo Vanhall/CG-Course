@@ -25,7 +25,7 @@ namespace LR_3
         {
             gl = GL;
             gl.GenBuffers(2, VBOPtr);
-            ParseModelFile(@"Models/Model1.xml");
+            ParseModelFile(@"Models/Model2.xml");
             BuildTrajectory();
             BuildSections();
 
@@ -77,22 +77,22 @@ namespace LR_3
         private void BuildSections()
         {
             sectVertices = section.Count;
-
-
-            var OX = new Vector(new double[] { 1, 0, 0 });
-            var OZ = new Vector(new double[] { 0, 0, 1 });
+            
             var rotate = new Matrix(4);
             var translate = new Matrix(4);
             Matrix transform;
             
             // Первое сечение
             var transVec = trajectory[0];
-            var nextVec = trajectory[1] - transVec;
-            double angle = Vector.AngleBetween(nextVec, OZ);
-            var rotationAxis = (OZ ^ nextVec).Normalize();
             translate.SetIdentity();
+            rotate.SetIdentity();
+            var newNormal = trajectory[1] - transVec;
+            var newUp = (trajectory[1] - transVec) ^ (trajectory[2] - transVec);
+            var newSide = newUp ^ newNormal;
 
-            rotate.GenerateRotation(angle, rotationAxis);
+            rotate.InsertAt(0, newNormal.Normalize());
+            rotate.InsertAt(1, newSide.Normalize());
+            rotate.InsertAt(2, newUp.Normalize());
             translate.InsertAt(3, transVec);
             transform = translate * rotate;
 
@@ -105,16 +105,28 @@ namespace LR_3
                 vertexCount++;
             }
             
-            // Промежуточные
-            for (int k = 1; k < trajectory.Count - 1; k++)
+            // Промежуточные сечения
+            for (int i = 1; i < trajectory.Count - 1; i++)
             {
-                transVec = trajectory[k];
-                nextVec = (trajectory[k + 1] - transVec).Normalize() + (transVec - trajectory[k - 1]).Normalize();
-                angle = Vector.AngleBetween(nextVec, OZ);
-                rotationAxis = (OZ ^ nextVec).Normalize();
+                transVec = trajectory[i];
                 translate.SetIdentity();
+                rotate.SetIdentity();
+                newNormal = (trajectory[i + 1] - transVec).Normalize() + (transVec - trajectory[i - 1]).Normalize();
+                newUp = (transVec - trajectory[i - 1]) ^ (trajectory[i + 1] - transVec);
+                newSide = newUp ^ newNormal;
 
-                rotate.GenerateRotation(angle, rotationAxis);
+                rotate.InsertAt(0, newNormal.Normalize());
+                rotate.InsertAt(1, newSide.Normalize());
+                rotate.InsertAt(2, newUp.Normalize());
+                //transVec = trajectory[i];
+                //normal = (trajectory[i + 1] - transVec).Normalize() + (transVec - trajectory[i - 1]).Normalize();
+                //rotationAxis = (OX ^ normal).Normalize();
+                //angle = Vector.AngleBetween(normal, OX);
+
+                //rotate.GenerateRotation(angle, rotationAxis);
+                //translate.InsertAt(3, transVec);
+                //transform = translate * rotate;
+                
                 translate.InsertAt(3, transVec);
                 transform = translate * rotate;
 
@@ -130,12 +142,15 @@ namespace LR_3
 
             // Последнее сечение
             transVec = trajectory[trajVertices - 1];
-            nextVec = -(trajectory[trajVertices - 2] - transVec);
-            angle = Vector.AngleBetween(nextVec, OZ);
-            rotationAxis = (OZ ^ nextVec).Normalize();
             translate.SetIdentity();
+            rotate.SetIdentity();
+            newNormal = -(trajectory[trajVertices - 2] - transVec);
+            newSide = newUp ^ newNormal;
 
-            rotate.GenerateRotation(angle, rotationAxis);
+            rotate.InsertAt(0, newNormal.Normalize());
+            rotate.InsertAt(1, newSide.Normalize());
+            rotate.InsertAt(2, newUp.Normalize());
+
             translate.InsertAt(3, transVec);
             transform = translate * rotate;
 

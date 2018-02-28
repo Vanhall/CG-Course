@@ -123,8 +123,10 @@ namespace LR_3
         public static double AngleBetween(Vector A, Vector B)
         {
             //TODO: проверка размерности
-            double angle = (A * B) / (A.GetLength() * B.GetLength());
-            return Math.Acos(angle);
+            double scalar = A * B;
+            double lengths = A.GetLength() * B.GetLength();
+            if (lengths < double.Epsilon) throw new DivideByZeroException();
+            return Math.Acos(scalar / lengths);
         }
 
         /// <summary>
@@ -148,7 +150,7 @@ namespace LR_3
             {
                 result[Axis.X] = 0;
                 result[Axis.Y] = 0;
-                result[Axis.Z] = 1;
+                result[Axis.Z] = 0;
             }
             else
                 for (int i = 0; i < Dimension; i++) result[i] = vec[i] / l;
