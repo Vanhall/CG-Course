@@ -101,10 +101,18 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="CompGraphics.ico" />
-    <Content Include="Models\Model2.xml">
+    <Content Include="Models\ZigZag.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Models\Model1.xml">
+    <Content Include="Models\Ring.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="Models\Spiral.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="Models\Square.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

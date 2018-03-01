@@ -11,23 +11,28 @@ namespace LR_3
         OpenGL gl;
 
         List<Vector> section = new List<Vector>();
+        List<Vector> sections = new List<Vector>();
         List<Vector> trajectory = new List<Vector>();
+        List<Vector> surface = new List<Vector>();
 
-        uint[] VBOPtr = new uint[2];
+        uint[] VBOPtr = new uint[3];
         float[] VBOTrajectory;
         List<float> VBOSections = new List<float>();
+        List<float> VBOSurface = new List<float>();
+        //List<float> VBOTemp = new List<float>();
 
-        int vertexCount = 0;
+        int surfVertices = 0;
         int trajVertices = 0;
         int sectVertices = 0;
 
         public Model(OpenGL GL)
         {
             gl = GL;
-            gl.GenBuffers(2, VBOPtr);
-            ParseModelFile(@"Models/Model2.xml");
+            gl.GenBuffers(3, VBOPtr);
+            ParseModelFile(@"Models/Spiral.xml");
             BuildTrajectory();
             BuildSections();
+            BuildSurface();
 
             UpdateVBO();
         }
@@ -88,6 +93,7 @@ namespace LR_3
             rotate.SetIdentity();
             var newNormal = trajectory[1] - transVec;
             var newUp = (trajectory[1] - transVec) ^ (trajectory[2] - transVec);
+            if (newUp[Vector.Axis.Z] < 0) newUp = -newUp;
             var newSide = newUp ^ newNormal;
 
             rotate.InsertAt(0, newNormal.Normalize());
@@ -102,33 +108,39 @@ namespace LR_3
                 vertex.CopyFrom(V);
                 vertex = transform * vertex;
                 VBOSections.AddRange(vertex.ToArray());
-                vertexCount++;
+                
+                sections.Add(new Vector(new double[] { vertex[0], vertex[1], vertex[2] }));
             }
-            
+
             // Промежуточные сечения
+            var prevUp = new Vector(3);
             for (int i = 1; i < trajectory.Count - 1; i++)
             {
+                prevUp.CopyFrom(newUp);
                 transVec = trajectory[i];
                 translate.SetIdentity();
                 rotate.SetIdentity();
-                newNormal = (trajectory[i + 1] - transVec).Normalize() + (transVec - trajectory[i - 1]).Normalize();
-                newUp = (transVec - trajectory[i - 1]) ^ (trajectory[i + 1] - transVec);
+                var nextVec = trajectory[i + 1] - transVec;
+                var prevVec = transVec - trajectory[i - 1];
+                newNormal = nextVec.Normalize() + prevVec.Normalize();
+                newUp = prevVec ^ nextVec;
+                if (newUp[Vector.Axis.Z] * prevUp[Vector.Axis.Z] < 0) newUp = -newUp;
                 newSide = newUp ^ newNormal;
 
                 rotate.InsertAt(0, newNormal.Normalize());
                 rotate.InsertAt(1, newSide.Normalize());
                 rotate.InsertAt(2, newUp.Normalize());
-                //transVec = trajectory[i];
-                //normal = (trajectory[i + 1] - transVec).Normalize() + (transVec - trajectory[i - 1]).Normalize();
-                //rotationAxis = (OX ^ normal).Normalize();
-                //angle = Vector.AngleBetween(normal, OX);
-
-                //rotate.GenerateRotation(angle, rotationAxis);
-                //translate.InsertAt(3, transVec);
-                //transform = translate * rotate;
                 
                 translate.InsertAt(3, transVec);
                 transform = translate * rotate;
+                
+                //VBOTemp.AddRange(transVec.ToArray());
+                //VBOTemp.AddRange((newNormal.Normalize()+ transVec).ToArray());
+                //VBOTemp.AddRange(transVec.ToArray());
+                //VBOTemp.AddRange((newUp.Normalize() + transVec).ToArray());
+                //VBOTemp.AddRange(transVec.ToArray());
+                //VBOTemp.AddRange((newSide.Normalize() + transVec).ToArray());
+
 
                 foreach (Vector V in section)
                 {
@@ -136,7 +148,7 @@ namespace LR_3
                     vertex.CopyFrom(V);
                     vertex = transform * vertex;
                     VBOSections.AddRange(vertex.ToArray());
-                    vertexCount++;
+                    sections.Add(new Vector(new double[] { vertex[0], vertex[1], vertex[2] }));
                 }
             }
 
@@ -160,8 +172,39 @@ namespace LR_3
                 vertex.CopyFrom(V);
                 vertex = transform * vertex;
                 VBOSections.AddRange(vertex.ToArray());
-                vertexCount++;
+                sections.Add(new Vector(new double[] { vertex[0], vertex[1], vertex[2] }));
             }
+        }
+
+        private void BuildSurface()
+        {
+            // Добавляем первую "крышку"
+            surface.Add(trajectory[0]);
+            for (int i = 0; i < sectVertices; i++) surface.Add(sections[i]);
+            surface.Add(sections[0]);
+            surfVertices = sectVertices + 1;
+
+            // Добавляем сегменты
+            for (int sPtr = 0; sPtr < sections.Count - sectVertices; sPtr += sectVertices)
+            {
+                int nextsPtr = sPtr + sectVertices;
+                for (int i = 0; i < sectVertices; i++)
+                {
+                    surface.Add(sections[sPtr + i]);
+                    surface.Add(sections[nextsPtr + i]);
+                }
+                surface.Add(sections[sPtr]);
+                surface.Add(sections[nextsPtr]);
+                surfVertices += sectVertices * 2 + 2;
+            }
+
+            // Добавляем последнюю "крышку"
+            surface.Add(trajectory[trajVertices - 1]);
+            for (int i = sections.Count - sectVertices; i < sections.Count; i++) surface.Add(sections[i]);
+            surface.Add(sections[sections.Count - sectVertices]);
+            surfVertices += sectVertices + 1;
+
+            foreach (Vector V in surface) VBOSurface.AddRange(V.ToArray());
         }
 
         private void UpdateVBO()
@@ -170,6 +213,8 @@ namespace LR_3
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOSections.ToArray(), OpenGL.GL_STATIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOTrajectory, OpenGL.GL_STATIC_DRAW);
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOSurface.ToArray(), OpenGL.GL_STATIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
 
@@ -187,15 +232,15 @@ namespace LR_3
                 gl.DrawArrays(OpenGL.GL_LINE_LOOP, first, sectVertices);
 
 
-            gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), IntPtr.Zero);
-            gl.Color(new float[] { 0f, 0.5f, 1f });
-            gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
-            gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), (IntPtr)(6 * sizeof(float)));
-            gl.Color(new float[] { 1f, 0.5f, 0f });
-            gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
-            gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), (IntPtr)(9 * sizeof(float)));
-            gl.Color(new float[] { 0f, 1f, 0.5f });
-            gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
+            //gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), IntPtr.Zero);
+            //gl.Color(new float[] { 0f, 0.5f, 1f });
+            //gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
+            //gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), (IntPtr)(6 * sizeof(float)));
+            //gl.Color(new float[] { 1f, 0.5f, 0f });
+            //gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
+            //gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), (IntPtr)(9 * sizeof(float)));
+            //gl.Color(new float[] { 0f, 1f, 0.5f });
+            //gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
 
 
             // Траектория
@@ -206,7 +251,22 @@ namespace LR_3
             gl.Color(new float[] { 1f, 1f, 0f });
             gl.PointSize(5f);
             gl.DrawArrays(OpenGL.GL_POINTS, 0, trajVertices);
-            
+
+            // Поверхность
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
+            gl.Color(new float[] { 0.8f, 0.5f, 0.5f });
+
+            gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, sectVertices + 2);
+
+            int count = sectVertices * 2 + 2;
+            for (int first = sectVertices + 2; first < surfVertices - sectVertices - 2; first += count)
+                gl.DrawArrays(OpenGL.GL_TRIANGLE_STRIP, first, count);
+
+            int lastCap = sectVertices + 2 + count * (trajVertices - 1);
+            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, lastCap, sectVertices + 2);
+
+
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
