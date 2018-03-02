@@ -14,27 +14,31 @@ namespace LR_3
         List<Vector> sections = new List<Vector>();
         List<Vector> trajectory = new List<Vector>();
         List<Vector> surface = new List<Vector>();
+        List<Vector> normals = new List<Vector>();
 
-        uint[] VBOPtr = new uint[3];
-        float[] VBOTrajectory;
+        uint[] VBOPtr = new uint[4];
+        List<float> VBOTrajectory = new List<float>();
         List<float> VBOSections = new List<float>();
         List<float> VBOSurface = new List<float>();
-        //List<float> VBOTemp = new List<float>();
+        List<float> VBONormals = new List<float>();
 
         int surfVertices = 0;
         int trajVertices = 0;
         int sectVertices = 0;
+        int segmVertices = 0;
+        int capVertices = 0;
 
         public Model(OpenGL GL)
         {
             gl = GL;
-            gl.GenBuffers(3, VBOPtr);
-            ParseModelFile(@"Models/Spiral.xml");
+            gl.GenBuffers(4, VBOPtr);
+            ParseModelFile(@"Models/Ring.xml");
             BuildTrajectory();
             BuildSections();
             BuildSurface();
+            BuildNormals();
 
-            UpdateVBO();
+            BindVBOs();
         }
 
         private void ParseModelFile(string path)
@@ -68,21 +72,16 @@ namespace LR_3
         private void BuildTrajectory()
         {
             trajVertices = trajectory.Count;
-            VBOTrajectory = new float[trajVertices * 3];
-            int i = 0;
             foreach (Vector V in trajectory)
-            {
-                VBOTrajectory[i] = (float)V[Vector.Axis.X];
-                VBOTrajectory[i + 1] = (float)V[Vector.Axis.Y];
-                VBOTrajectory[i + 2] = (float)V[Vector.Axis.Z];
-                i += 3;
-            }
+                VBOTrajectory.AddRange(V.ToArray());
         }
 
         private void BuildSections()
         {
             sectVertices = section.Count;
-            
+            capVertices = sectVertices + 1;
+
+
             var rotate = new Matrix(4);
             var translate = new Matrix(4);
             Matrix transform;
@@ -134,14 +133,6 @@ namespace LR_3
                 translate.InsertAt(3, transVec);
                 transform = translate * rotate;
                 
-                //VBOTemp.AddRange(transVec.ToArray());
-                //VBOTemp.AddRange((newNormal.Normalize()+ transVec).ToArray());
-                //VBOTemp.AddRange(transVec.ToArray());
-                //VBOTemp.AddRange((newUp.Normalize() + transVec).ToArray());
-                //VBOTemp.AddRange(transVec.ToArray());
-                //VBOTemp.AddRange((newSide.Normalize() + transVec).ToArray());
-
-
                 foreach (Vector V in section)
                 {
                     var vertex = new Vector(4, 1);
@@ -178,93 +169,169 @@ namespace LR_3
 
         private void BuildSurface()
         {
+            segmVertices = (sectVertices - 1) * 6;
             // Добавляем первую "крышку"
             surface.Add(trajectory[0]);
             for (int i = 0; i < sectVertices; i++) surface.Add(sections[i]);
-            surface.Add(sections[0]);
-            surfVertices = sectVertices + 1;
 
             // Добавляем сегменты
             for (int sPtr = 0; sPtr < sections.Count - sectVertices; sPtr += sectVertices)
             {
                 int nextsPtr = sPtr + sectVertices;
-                for (int i = 0; i < sectVertices; i++)
+                for (int i = 0; i < sectVertices - 1; i++)
                 {
                     surface.Add(sections[sPtr + i]);
                     surface.Add(sections[nextsPtr + i]);
+                    surface.Add(sections[sPtr + i + 1]);
+                    surface.Add(sections[sPtr + i + 1]);
+                    surface.Add(sections[nextsPtr + i]);
+                    surface.Add(sections[nextsPtr + i + 1]);
                 }
-                surface.Add(sections[sPtr]);
-                surface.Add(sections[nextsPtr]);
-                surfVertices += sectVertices * 2 + 2;
             }
 
             // Добавляем последнюю "крышку"
             surface.Add(trajectory[trajVertices - 1]);
             for (int i = sections.Count - sectVertices; i < sections.Count; i++) surface.Add(sections[i]);
-            surface.Add(sections[sections.Count - sectVertices]);
-            surfVertices += sectVertices + 1;
+            surfVertices = surface.Count;
 
             foreach (Vector V in surface) VBOSurface.AddRange(V.ToArray());
         }
 
-        private void UpdateVBO()
+        private void BuildNormals()
+        {
+            // Первая "крышка"
+            var normal = (trajectory[0] - trajectory[1]).Normalize();
+            for (int i = 0; i < sectVertices + 1; i++)
+            {
+                VBOSurface.AddRange(normal.ToArray());
+                normals.Add(normal);
+                VBONormals.AddRange(surface[i].ToArray());
+                VBONormals.AddRange((surface[i] + normal).ToArray());
+            }
+
+            // Сегменты
+            for (int sPtr = 0; sPtr < sections.Count - sectVertices; sPtr += sectVertices)
+            {
+                int nextsPtr = sPtr + sectVertices;
+                for (int i = 0; i < sectVertices - 1; i++)
+                {
+                    var a = sections[sPtr + i];
+                    var b = sections[sPtr + i + 1];
+                    var c = sections[nextsPtr + i];
+                    normal = ((c - a) ^ (b - a)).Normalize();
+                    for (int k = 0; k < 3; k++)
+                    {
+                        VBOSurface.AddRange(normal.ToArray());
+                        normals.Add(normal);
+                    }
+                    VBONormals.AddRange(a.ToArray());
+                    VBONormals.AddRange((a + normal).ToArray());
+                    VBONormals.AddRange(b.ToArray());
+                    VBONormals.AddRange((b + normal).ToArray());
+                    VBONormals.AddRange(c.ToArray());
+                    VBONormals.AddRange((c + normal).ToArray());
+
+                    a = sections[sPtr + i + 1];
+                    b = sections[nextsPtr + i + 1];
+                    c = sections[nextsPtr + i];
+                    normal = ((c - a) ^ (b - a)).Normalize();
+                    for (int k = 0; k < 3; k++)
+                    {
+                        VBOSurface.AddRange(normal.ToArray());
+                        normals.Add(normal);
+                    }
+                    VBONormals.AddRange(a.ToArray());
+                    VBONormals.AddRange((a + normal).ToArray());
+                    VBONormals.AddRange(b.ToArray());
+                    VBONormals.AddRange((b + normal).ToArray());
+                    VBONormals.AddRange(c.ToArray());
+                    VBONormals.AddRange((c + normal).ToArray());
+                }
+            }
+
+            // Последняя "крышка"
+            normal = (trajectory[trajVertices - 1] - trajectory[trajVertices - 2]).Normalize();
+            for (int i = surfVertices - sectVertices - 1; i < surfVertices; i++)
+            {
+                VBOSurface.AddRange(normal.ToArray());
+                normals.Add(normal);
+                VBONormals.AddRange(surface[i].ToArray());
+                VBONormals.AddRange((surface[i] + normal).ToArray());
+            }
+        }
+
+        private void BindVBOs()
         {
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOSections.ToArray(), OpenGL.GL_STATIC_DRAW);
+            VBOSections.Clear();
+            section.Clear();
+            sections.Clear();
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOTrajectory, OpenGL.GL_STATIC_DRAW);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOTrajectory.ToArray(), OpenGL.GL_STATIC_DRAW);
+            VBOTrajectory.Clear();
+            trajectory.Clear();
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBOSurface.ToArray(), OpenGL.GL_STATIC_DRAW);
+            VBOSurface.Clear();
+            surface.Clear();
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBONormals.ToArray(), OpenGL.GL_STATIC_DRAW);
+            VBONormals.Clear();
+            normals.Clear();
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
 
         public void Render()
         {
             gl.EnableClientState(OpenGL.GL_VERTEX_ARRAY);
+            
+
+            // Нормали
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
+            gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+            gl.Color(new float[] { 0.2f, 0.2f, 1f });
+            gl.DrawArrays(OpenGL.GL_LINES, 0, surfVertices*2);
+            
+            // Поверхность
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
+            //gl.Color(new float[] { 0.8f, 0.5f, 0.5f });
+            gl.EnableClientState(OpenGL.GL_NORMAL_ARRAY);
+            gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+            gl.NormalPointer(OpenGL.GL_FLOAT, 0, (IntPtr)(surfVertices * 3 * sizeof(float)));
+            gl.Enable(OpenGL.GL_LIGHTING);
+
+            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, capVertices);
+            for (int first = capVertices; first < surfVertices - capVertices; first += segmVertices)
+                gl.DrawArrays(OpenGL.GL_TRIANGLES, first, segmVertices);
+            int lastCap = capVertices + segmVertices * (trajVertices - 1);
+            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, lastCap, capVertices);
+
+            gl.Disable(OpenGL.GL_LIGHTING);
+            gl.DisableClientState(OpenGL.GL_NORMAL_ARRAY);
+
+            // Траектория
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
+            gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
+
+            gl.Color(new float[] { 1f, 0f, 1f });
+            gl.Disable(OpenGL.GL_DEPTH_TEST);
+            gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
+
+            gl.Color(new float[] { 1f, 1f, 0f });
+            gl.PointSize(5f);
+            gl.DrawArrays(OpenGL.GL_POINTS, 0, trajVertices);
+            gl.Enable(OpenGL.GL_DEPTH_TEST);
 
             // Сечения
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
             gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
 
-            int totalVertices = sectVertices * trajVertices;
+            gl.Disable(OpenGL.GL_DEPTH_TEST);
             gl.Color(new float[] { 1f, 1f, 1f });
-            for (int first = 0; first < totalVertices; first += sectVertices)
-                gl.DrawArrays(OpenGL.GL_LINE_LOOP, first, sectVertices);
-
-
-            //gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), IntPtr.Zero);
-            //gl.Color(new float[] { 0f, 0.5f, 1f });
-            //gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
-            //gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), (IntPtr)(6 * sizeof(float)));
-            //gl.Color(new float[] { 1f, 0.5f, 0f });
-            //gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
-            //gl.VertexPointer(3, OpenGL.GL_FLOAT, sectVertices * 3 * sizeof(float), (IntPtr)(9 * sizeof(float)));
-            //gl.Color(new float[] { 0f, 1f, 0.5f });
-            //gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
-
-
-            // Траектория
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
-            gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-            gl.Color(new float[] { 1f, 0f, 1f });
-            gl.DrawArrays(OpenGL.GL_LINE_STRIP, 0, trajVertices);
-            gl.Color(new float[] { 1f, 1f, 0f });
-            gl.PointSize(5f);
-            gl.DrawArrays(OpenGL.GL_POINTS, 0, trajVertices);
-
-            // Поверхность
-            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
-            gl.Color(new float[] { 0.8f, 0.5f, 0.5f });
-
-            gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, sectVertices + 2);
-
-            int count = sectVertices * 2 + 2;
-            for (int first = sectVertices + 2; first < surfVertices - sectVertices - 2; first += count)
-                gl.DrawArrays(OpenGL.GL_TRIANGLE_STRIP, first, count);
-
-            int lastCap = sectVertices + 2 + count * (trajVertices - 1);
-            gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, lastCap, sectVertices + 2);
+            for (int first = 0; first < sectVertices * trajVertices; first += sectVertices)
+                gl.DrawArrays(OpenGL.GL_LINE_STRIP, first, sectVertices);
+            gl.Enable(OpenGL.GL_DEPTH_TEST);
 
 
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);

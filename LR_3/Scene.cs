@@ -11,6 +11,7 @@ namespace LR_3
         public Axies Axies;
         public bool ShowAxies;
         Model model;
+        float[] pos = { 20f, 20f, 20f, 0f };
 
         public Scene(OpenGLControl GLControl, double FOV, double zNear, double zFar)
         {
@@ -32,6 +33,8 @@ namespace LR_3
             model = new Model(gl);
 
             gl.Enable(OpenGL.GL_DEPTH_TEST);
+            //gl.Enable(OpenGL.GL_NORMALIZE);
+            gl.Enable(OpenGL.GL_LIGHT0);
         }
 
         public void Resize(int Width, int Height)
@@ -45,6 +48,9 @@ namespace LR_3
         public void Render()
         {
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
+
+            gl.Light(OpenGL.GL_LIGHT0, OpenGL.GL_POSITION, pos);
+
             if (ShowAxies) Axies.Render();
             model.Render();
             gl.Finish();
