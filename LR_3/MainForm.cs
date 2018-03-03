@@ -77,5 +77,43 @@ namespace LR_3
                 case Keys.F: scene.Cam.Translate(0, 0, -1.0); break;
             }
         }
+
+        private void TrajectoryChBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (TrajectoryChBox.Checked)
+                scene.Model.RenderMode |= Model.RenderFlags.Trajectory;
+            else
+                scene.Model.RenderMode &= ~Model.RenderFlags.Trajectory;
+        }
+
+        private void SectionsChBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (SectionsChBox.Checked)
+                scene.Model.RenderMode |= Model.RenderFlags.Sections;
+            else
+                scene.Model.RenderMode &= ~Model.RenderFlags.Sections;
+        }
+
+        private void NormalsChBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (NormalsChBox.Checked)
+                scene.Model.RenderMode |= Model.RenderFlags.Normal;
+            else
+                scene.Model.RenderMode &= ~Model.RenderFlags.Normal;
+        }
+
+        private void SmoothChBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (SmoothChBox.Checked)
+            {
+                scene.Model.RenderMode &= ~Model.RenderFlags.Flat;
+                scene.Model.RenderMode |= Model.RenderFlags.Smooth;
+            }
+            else
+            {
+                scene.Model.RenderMode &= ~Model.RenderFlags.Smooth;
+                scene.Model.RenderMode |= Model.RenderFlags.Flat;
+            }
+        }
     }
 }

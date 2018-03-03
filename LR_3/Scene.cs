@@ -10,7 +10,7 @@ namespace LR_3
         public Camera Cam;
         public Axies Axies;
         public bool ShowAxies;
-        Model model;
+        public Model Model;
         float[] pos = { 20f, 20f, 20f, 0f };
 
         public Scene(OpenGLControl GLControl, double FOV, double zNear, double zFar)
@@ -30,10 +30,9 @@ namespace LR_3
             Axies = new Axies(gl, 35f);
             ShowAxies = true;
             Cam = new Camera(gl);
-            model = new Model(gl);
+            Model = new Model(gl);
 
             gl.Enable(OpenGL.GL_DEPTH_TEST);
-            //gl.Enable(OpenGL.GL_NORMALIZE);
             gl.Enable(OpenGL.GL_LIGHT0);
         }
 
@@ -52,7 +51,7 @@ namespace LR_3
             gl.Light(OpenGL.GL_LIGHT0, OpenGL.GL_POSITION, pos);
 
             if (ShowAxies) Axies.Render();
-            model.Render();
+            Model.Render();
             gl.Finish();
         }
     }
