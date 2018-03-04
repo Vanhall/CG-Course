@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using SharpGL;
 
@@ -9,6 +10,7 @@ namespace LR_3
     public class Model
     {
         OpenGL gl;
+        public string Name { get; set; }
 
         public enum RenderFlags
         {
@@ -18,7 +20,9 @@ namespace LR_3
             Flat = 4,
             Smooth = 8,
             Trajectory = 16,
-            Sections = 32
+            Sections = 32,
+            Wireframe = 64,
+            Texture = 128
         }
 
         public RenderFlags RenderMode;
@@ -42,19 +46,26 @@ namespace LR_3
         int segmVertices = 0;
         int capVertices = 0;
 
-        public Model(OpenGL GL)
+        public Material Material;
+        public Texture Texture;
+
+        public Model(OpenGL GL, string path)
         {
             gl = GL;
             gl.GenBuffers(5, VBOPtr);
-            ParseModelFile(@"Models/Spiral.xml");
+            ParseModelFile(path);
             BuildTrajectory();
             BuildSections();
             BuildSurface();
             BuildNormals();
             BuildSmoothNormals();
+            BuildUV();
 
             BindVBOs();
-            RenderMode = RenderFlags.Surface | RenderFlags.Flat;
+            RenderMode = RenderFlags.Surface | RenderFlags.Flat | RenderFlags.Texture;
+
+            Material = new Material(gl, Material.ID.Bronze);
+            Texture = new Texture(gl, @"Textures/default.png");
         }
 
         private void ParseModelFile(string path)
@@ -63,8 +74,11 @@ namespace LR_3
             var inputFile = new XmlDocument();
             var dblFormat = CultureInfo.InvariantCulture;
             inputFile.Load(path);
-            
-            var node = inputFile.SelectSingleNode("model/section");
+
+            var node = inputFile.SelectSingleNode("model");
+            Name = node.Attributes[0].Value;
+
+            node = inputFile.SelectSingleNode("model/section");
             foreach (XmlNode vertex in node.ChildNodes)
             {
                 var Vec = new Vector(3);
@@ -343,6 +357,66 @@ namespace LR_3
                 VBOSmoothNormals.Add(VBONormals[i]);
         }
 
+        private void BuildUV()
+        {
+            // Первая "крышка"
+            var U = new List<double> { 0 };
+            var V = new List<double> { 0 };
+            foreach (Vector vertex in section)
+            {
+                U.Add(vertex[Vector.Axis.Y]);
+                V.Add(vertex[Vector.Axis.Z]);
+            }
+            double hScale = 1 / Math.Abs(V.Max() - V.Min());
+            double vScale = 1 / Math.Abs(U.Max() - U.Min());
+            double hOffset = Math.Abs(V.Min());
+            double vOffset = Math.Abs(U.Min());
+
+            var capCoords = new List<float>();
+            for (int i = 0; i < U.Count; i++)
+            {
+                U[i] += vOffset;
+                U[i] *= vScale;
+                //VBOSurface.Add((float)U[i]);
+                capCoords.Add((float)U[i]);
+                V[i] += hOffset;
+                V[i] *= hScale;
+                capCoords.Add((float)V[i]);
+                //VBOSurface.Add((float)V[i]);
+            }
+            VBOSurface.AddRange(capCoords.ToArray());
+
+            // Сегменты
+            var lengths = new List<double> { 0 };
+            for (int i = 1; i < sectVertices; i++)
+            {
+                var vec = section[i] - section[i - 1];
+                lengths.Add(vec.GetLength() + lengths[i - 1]);
+            }
+            double lenghtScale = 1 / lengths.Last();
+            for (int i = 0; i < lengths.Count; i++) lengths[i] *= lenghtScale;
+
+            for (int s = 0; s < trajVertices - 1; s++)
+                for (int i = 0; i < sectVertices - 1; i++)
+                {
+                    VBOSurface.Add(0f);
+                    VBOSurface.Add((float)lengths[i]);
+                    VBOSurface.Add(1f);
+                    VBOSurface.Add((float)lengths[i]);
+                    VBOSurface.Add(0f);
+                    VBOSurface.Add((float)lengths[i + 1]);
+                    VBOSurface.Add(0f);
+                    VBOSurface.Add((float)lengths[i + 1]);
+                    VBOSurface.Add(1f);
+                    VBOSurface.Add((float)lengths[i]);
+                    VBOSurface.Add(1f);
+                    VBOSurface.Add((float)lengths[i + 1]);
+                }
+
+            // Последняя "крышка"
+            VBOSurface.AddRange(capCoords.ToArray());
+        }
+
         private void BindVBOs()
         {
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
@@ -375,6 +449,7 @@ namespace LR_3
             // Нормали
             if ((RenderMode & RenderFlags.Normal) != 0 && (RenderMode & RenderFlags.Flat) != 0)
             {
+                gl.LineWidth(2f);
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[3]);
                 gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
                 gl.Color(new float[] { 0.2f, 0.2f, 1f });
@@ -385,6 +460,7 @@ namespace LR_3
             // Сглаженные нормали
             if ((RenderMode & RenderFlags.Normal) != 0 && (RenderMode & RenderFlags.Smooth) != 0)
             {
+                gl.LineWidth(2f);
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[4]);
                 gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
                 gl.Color(new float[] { 0f, 1f, 1f });
@@ -398,6 +474,8 @@ namespace LR_3
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
                 gl.EnableClientState(OpenGL.GL_NORMAL_ARRAY);
                 gl.Enable(OpenGL.GL_LIGHTING);
+                if ((RenderMode & RenderFlags.Wireframe) != 0)
+                    gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
 
                 gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
                 if ((RenderMode & RenderFlags.Flat) != 0)
@@ -405,10 +483,23 @@ namespace LR_3
                 else
                     gl.NormalPointer(OpenGL.GL_FLOAT, 0, (IntPtr)(surfVertices * 6 * sizeof(float)));
 
+                if ((RenderMode & RenderFlags.Texture) != 0)
+                {
+                    gl.Enable(OpenGL.GL_TEXTURE_2D);
+                    gl.EnableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
+                    Texture.Bind();
+                    gl.TexCoordPointer(2, OpenGL.GL_FLOAT, 0, (IntPtr)(surfVertices * 9 * sizeof(float)));
+                }
+
+                gl.LineWidth(1f);
                 gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, capVertices);
                 gl.DrawArrays(OpenGL.GL_TRIANGLES, capVertices, surfVertices - capVertices * 2);
                 gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, surfVertices - capVertices, capVertices);
 
+                gl.Disable(OpenGL.GL_TEXTURE_2D);
+                gl.DisableClientState(OpenGL.GL_TEXTURE_COORD_ARRAY);
+                Texture.Unbind();
+                gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
                 gl.Disable(OpenGL.GL_LIGHTING);
                 gl.DisableClientState(OpenGL.GL_NORMAL_ARRAY);
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
@@ -417,6 +508,7 @@ namespace LR_3
             // Траектория
             if ((RenderMode & RenderFlags.Trajectory) != 0)
             {
+                gl.LineWidth(2f);
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
                 gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
 
@@ -434,6 +526,7 @@ namespace LR_3
             // Сечения
             if ((RenderMode & RenderFlags.Sections) != 0)
             {
+                gl.LineWidth(2f);
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
                 gl.VertexPointer(3, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
 

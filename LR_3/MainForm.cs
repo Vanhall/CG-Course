@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -15,11 +16,17 @@ namespace LR_3
             InitializeComponent();
             mouseStartDrag = new Point(0, 0);
             GLControl.MouseWheel += new MouseEventHandler(GLControl_MouseWheel);
+
+            PerspectiveRB.CheckedChanged += new EventHandler(Projection_Changed);
+            OrthoRB.CheckedChanged += new EventHandler(Projection_Changed);
         }
 
         private void GLControl_OpenGLInitialized(object sender, EventArgs e)
         {
             scene = new Scene(GLControl, 60.0, 1.0, 200.0);
+            MaterialSwitcher.DataSource = Enum.GetValues(typeof(Material.ID));
+            PickModel.Text = "Модель: " + scene.Model.Name;
+            FileDialog.InitialDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Models");
         }
 
         private void GLControl_OpenGLDraw(object sender, SharpGL.RenderEventArgs args)
@@ -63,6 +70,7 @@ namespace LR_3
         private void GLControl_MouseWheel(object sender, MouseEventArgs e)
         {
             scene.Cam.Zoom(scene.Cam.R - e.Delta / 60);
+            scene.OrthoFactor = scene.Cam.R - e.Delta / 60;
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
@@ -114,6 +122,46 @@ namespace LR_3
                 scene.Model.RenderMode &= ~Model.RenderFlags.Smooth;
                 scene.Model.RenderMode |= Model.RenderFlags.Flat;
             }
+        }
+
+        private void WireframeChBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (WireframeChBox.Checked)
+                scene.Model.RenderMode |= Model.RenderFlags.Wireframe;
+            else
+                scene.Model.RenderMode &= ~Model.RenderFlags.Wireframe;
+        }
+
+        private void MaterialSwitcher_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            scene.Model.Material.Kind = (Material.ID)MaterialSwitcher.SelectedIndex;
+        }
+
+        private void Projection_Changed(object sender, EventArgs e)
+        {
+            if (PerspectiveRB.Checked) scene.Ortho = false;
+            else scene.Ortho = true;
+        }
+
+        private void PickModel_Click(object sender, EventArgs e)
+        {
+            DialogResult result = FileDialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                var oldRenderMode = scene.Model.RenderMode;
+                scene.Model = new Model(GLControl.OpenGL, FileDialog.FileName);
+                scene.Model.RenderMode = oldRenderMode;
+                scene.Model.Material.Kind = (Material.ID)MaterialSwitcher.SelectedIndex;
+                PickModel.Text = "Модель: " + scene.Model.Name;
+            }
+        }
+
+        private void TextureChBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (TextureChBox.Checked)
+                scene.Model.RenderMode |= Model.RenderFlags.Texture;
+            else
+                scene.Model.RenderMode &= ~Model.RenderFlags.Texture;
         }
     }
 }

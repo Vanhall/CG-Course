@@ -9,9 +9,8 @@ namespace LR_3
         
         #region Константы и оганичители движения камеры
         const double phiMax = 360.0, phiMin = 0.0;
-        const double psiMax = 89.9, psiMin = -15.0;
+        const double psiMax = 89.9, psiMin = -89.9;
         const double RMax = 50.0, RMin = 5.0;
-        //const double shiftMax = 18.0, shiftMin = -18.0;
         #endregion
 
         double[] eye = new double[3];
