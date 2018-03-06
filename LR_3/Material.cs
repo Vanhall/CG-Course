@@ -6,6 +6,12 @@ namespace LR_3
     public class Material
     {
         OpenGL gl;
+
+        private float[] ambient;
+        private float[] diffuse;
+        private float[] specular;
+        private float shininess;
+
         [Flags]
         public enum ID
         {
@@ -51,11 +57,6 @@ namespace LR_3
             }
         }
 
-        private float[] ambient;
-        private float[] diffuse;
-        private float[] specular;
-        private float shininess;
-        
         public Material(OpenGL GL, ID ID)
         {
             gl = GL;

@@ -43,7 +43,6 @@ namespace LR_3
         int surfVertices = 0;
         int trajVertices = 0;
         int sectVertices = 0;
-        int segmVertices = 0;
         int capVertices = 0;
 
         public Material Material;
@@ -102,8 +101,7 @@ namespace LR_3
         private void BuildTrajectory()
         {
             trajVertices = trajectory.Count;
-            foreach (Vector V in trajectory)
-                VBOTrajectory.AddRange(V.ToArray());
+            foreach (Vector V in trajectory)  VBOTrajectory.AddRange(V.ToArray());
         }
 
         private void BuildSections()
@@ -120,14 +118,14 @@ namespace LR_3
             var transVec = trajectory[0];
             translate.SetIdentity();
             rotate.SetIdentity();
-            var newNormal = trajectory[1] - transVec;
-            var newUp = (trajectory[1] - transVec) ^ (trajectory[2] - transVec);
-            if (newUp[Vector.Axis.Z] < 0) newUp = -newUp;
-            var newSide = newUp ^ newNormal;
+            var normal = trajectory[1] - transVec;
+            var up = (trajectory[1] - transVec) ^ (trajectory[2] - transVec);
+            if (up[Vector.Axis.Z] < 0) up = -up;
+            var side = up ^ normal;
 
-            rotate.InsertAt(0, newNormal.Normalize());
-            rotate.InsertAt(1, newSide.Normalize());
-            rotate.InsertAt(2, newUp.Normalize());
+            rotate.InsertAt(0, normal.Normalize());
+            rotate.InsertAt(1, side.Normalize());
+            rotate.InsertAt(2, up.Normalize());
             translate.InsertAt(3, transVec);
             transform = translate * rotate;
 
@@ -145,20 +143,20 @@ namespace LR_3
             var prevUp = new Vector(3);
             for (int i = 1; i < trajectory.Count - 1; i++)
             {
-                prevUp.CopyFrom(newUp);
+                prevUp.CopyFrom(up);
                 transVec = trajectory[i];
                 translate.SetIdentity();
                 rotate.SetIdentity();
                 var nextVec = trajectory[i + 1] - transVec;
                 var prevVec = transVec - trajectory[i - 1];
-                newNormal = nextVec.Normalize() + prevVec.Normalize();
-                newUp = prevVec ^ nextVec;
-                if (newUp[Vector.Axis.Z] * prevUp[Vector.Axis.Z] < 0) newUp = -newUp;
-                newSide = newUp ^ newNormal;
+                normal = nextVec.Normalize() + prevVec.Normalize();
+                up = prevVec ^ nextVec;
+                if (up[Vector.Axis.Z] * prevUp[Vector.Axis.Z] < 0) up = -up;
+                side = up ^ normal;
 
-                rotate.InsertAt(0, newNormal.Normalize());
-                rotate.InsertAt(1, newSide.Normalize());
-                rotate.InsertAt(2, newUp.Normalize());
+                rotate.InsertAt(0, normal.Normalize());
+                rotate.InsertAt(1, side.Normalize());
+                rotate.InsertAt(2, up.Normalize());
                 translate.InsertAt(3, transVec);
                 transform = translate * rotate;
                 
@@ -176,12 +174,12 @@ namespace LR_3
             transVec = trajectory[trajVertices - 1];
             translate.SetIdentity();
             rotate.SetIdentity();
-            newNormal = -(trajectory[trajVertices - 2] - transVec);
-            newSide = newUp ^ newNormal;
+            normal = -(trajectory[trajVertices - 2] - transVec);
+            side = up ^ normal;
 
-            rotate.InsertAt(0, newNormal.Normalize());
-            rotate.InsertAt(1, newSide.Normalize());
-            rotate.InsertAt(2, newUp.Normalize());
+            rotate.InsertAt(0, normal.Normalize());
+            rotate.InsertAt(1, side.Normalize());
+            rotate.InsertAt(2, up.Normalize());
             translate.InsertAt(3, transVec);
             transform = translate * rotate;
 
@@ -197,7 +195,6 @@ namespace LR_3
 
         private void BuildSurface()
         {
-            segmVertices = (sectVertices - 1) * 6;
             // Добавляем первую "крышку"
             surface.Add(trajectory[0]);
             for (int i = 0; i < sectVertices; i++) surface.Add(sections[i]);
@@ -209,11 +206,9 @@ namespace LR_3
                 for (int i = 0; i < sectVertices - 1; i++)
                 {
                     surface.Add(sections[sPtr + i]);
-                    surface.Add(sections[nextsPtr + i]);
                     surface.Add(sections[sPtr + i + 1]);
-                    surface.Add(sections[sPtr + i + 1]);
-                    surface.Add(sections[nextsPtr + i]);
                     surface.Add(sections[nextsPtr + i + 1]);
+                    surface.Add(sections[nextsPtr + i]);
                 }
             }
 
@@ -253,33 +248,13 @@ namespace LR_3
                     var a = sections[sPtr + i];
                     var b = sections[sPtr + i + 1];
                     var c = sections[nextsPtr + i];
-                    normal = ((c - a) ^ (b - a)).Normalize();
-                    for (int k = 0; k < 3; k++)
-                    {
-                        VBOSurface.AddRange(normal.ToArray());
-                    }
+                    var d = sections[nextsPtr + i + 1];
+                    normal = (((c - a) ^ (b - a)) + ((b - d) ^ (c - d))).Normalize();
+                    for (int k = 0; k < 4; k++) VBOSurface.AddRange(normal.ToArray());
                     AddNormal(sPtr + i, normal);
                     AddNormal(sPtr + i + 1, normal);
                     AddNormal(nextsPtr + i, normal);
-
-                    VBONormals.AddRange(a.ToArray());
-                    VBONormals.AddRange((a + normal).ToArray());
-                    VBONormals.AddRange(b.ToArray());
-                    VBONormals.AddRange((b + normal).ToArray());
-                    VBONormals.AddRange(c.ToArray());
-                    VBONormals.AddRange((c + normal).ToArray());
-
-                    a = sections[sPtr + i + 1];
-                    b = sections[nextsPtr + i + 1];
-                    c = sections[nextsPtr + i];
-                    normal = ((c - a) ^ (b - a)).Normalize();
-                    for (int k = 0; k < 3; k++)
-                    {
-                        VBOSurface.AddRange(normal.ToArray());
-                    }
-                    AddNormal(sPtr + i + 1, normal);
                     AddNormal(nextsPtr + i + 1, normal);
-                    AddNormal(nextsPtr + i, normal);
 
                     VBONormals.AddRange(a.ToArray());
                     VBONormals.AddRange((a + normal).ToArray());
@@ -287,6 +262,8 @@ namespace LR_3
                     VBONormals.AddRange((b + normal).ToArray());
                     VBONormals.AddRange(c.ToArray());
                     VBONormals.AddRange((c + normal).ToArray());
+                    VBONormals.AddRange(d.ToArray());
+                    VBONormals.AddRange((d + normal).ToArray());
                 }
             }
 
@@ -320,7 +297,7 @@ namespace LR_3
                 normals[VertexID].Add(smoothNormal.Normalize());
             }
 
-            // "Зашиваем" стык (первая и последняя вершина сечения
+            // "Зашиваем" стык (первая и последняя вершина сечения)
             for (int sPtr = 0; sPtr < sections.Count; sPtr += sectVertices)
             {
                 var smoothNormal = normals[sPtr][0] + normals[sPtr + sectVertices - 1][0];
@@ -335,12 +312,9 @@ namespace LR_3
                 for (int i = 0; i < sectVertices - 1; i++)
                 {
                     VBOSurface.AddRange(normals[sPtr + i][0].ToArray());
-                    VBOSurface.AddRange(normals[nextsPtr + i][0].ToArray());
                     VBOSurface.AddRange(normals[sPtr + i + 1][0].ToArray());
-
-                    VBOSurface.AddRange(normals[sPtr + i + 1][0].ToArray());
-                    VBOSurface.AddRange(normals[nextsPtr + i][0].ToArray());
                     VBOSurface.AddRange(normals[nextsPtr + i + 1][0].ToArray());
+                    VBOSurface.AddRange(normals[nextsPtr + i][0].ToArray());
                 }
             }
             
@@ -377,12 +351,10 @@ namespace LR_3
             {
                 U[i] += vOffset;
                 U[i] *= vScale;
-                //VBOSurface.Add((float)U[i]);
                 capCoords.Add((float)U[i]);
                 V[i] += hOffset;
                 V[i] *= hScale;
                 capCoords.Add((float)V[i]);
-                //VBOSurface.Add((float)V[i]);
             }
             VBOSurface.AddRange(capCoords.ToArray());
 
@@ -401,16 +373,12 @@ namespace LR_3
                 {
                     VBOSurface.Add(0f);
                     VBOSurface.Add((float)lengths[i]);
-                    VBOSurface.Add(1f);
-                    VBOSurface.Add((float)lengths[i]);
-                    VBOSurface.Add(0f);
-                    VBOSurface.Add((float)lengths[i + 1]);
                     VBOSurface.Add(0f);
                     VBOSurface.Add((float)lengths[i + 1]);
                     VBOSurface.Add(1f);
-                    VBOSurface.Add((float)lengths[i]);
-                    VBOSurface.Add(1f);
                     VBOSurface.Add((float)lengths[i + 1]);
+                    VBOSurface.Add(1f);
+                    VBOSurface.Add((float)lengths[i]);
                 }
 
             // Последняя "крышка"
@@ -493,7 +461,7 @@ namespace LR_3
 
                 gl.LineWidth(1f);
                 gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, 0, capVertices);
-                gl.DrawArrays(OpenGL.GL_TRIANGLES, capVertices, surfVertices - capVertices * 2);
+                gl.DrawArrays(OpenGL.GL_QUADS, capVertices, surfVertices - capVertices * 2);
                 gl.DrawArrays(OpenGL.GL_TRIANGLE_FAN, surfVertices - capVertices, capVertices);
 
                 gl.Disable(OpenGL.GL_TEXTURE_2D);

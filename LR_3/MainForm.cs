@@ -27,6 +27,7 @@ namespace LR_3
             MaterialSwitcher.DataSource = Enum.GetValues(typeof(Material.ID));
             PickModel.Text = "Модель: " + scene.Model.Name;
             FileDialog.InitialDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Models");
+            TextureFileDialog.InitialDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Textures");
         }
 
         private void GLControl_OpenGLDraw(object sender, SharpGL.RenderEventArgs args)
@@ -162,6 +163,15 @@ namespace LR_3
                 scene.Model.RenderMode |= Model.RenderFlags.Texture;
             else
                 scene.Model.RenderMode &= ~Model.RenderFlags.Texture;
+        }
+
+        private void PickTexture_Click(object sender, EventArgs e)
+        {
+            DialogResult result = TextureFileDialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                scene.Model.Texture.ChangeImage(TextureFileDialog.FileName);
+            }
         }
     }
 }
