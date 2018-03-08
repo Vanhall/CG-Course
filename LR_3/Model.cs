@@ -289,7 +289,7 @@ namespace LR_3
             foreach (int VertexID in normals.Keys)
             {
                 var smoothNormal = new Vector(3);
-                for (int i = 1; i < normals[VertexID].Count; i++)
+                for (int i = 0; i < normals[VertexID].Count; i++)
                 {
                     smoothNormal += normals[VertexID][i];
                 }
