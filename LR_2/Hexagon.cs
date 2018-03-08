@@ -33,19 +33,18 @@ namespace LR_2
         /*  Цвета  */
         float[] black = { 0f, 0f, 0f };         // Черный
         float[] white = { 1f, 1f, 1f };         // Белый
-        //float[] red = { 1f, 0f, 0f };           // Красный
 
         /*  VBO  */
-        uint[] VBOPtr = new uint[2];            // указатели VBO
+        uint[] VBOPtr = new uint[3];            // указатели VBO
         float[] VBO = new float[32];            // VBO основной
 
         /*  Структуры данных для растеризации  */
         List<float> VBORaster;          // VBO Растра (сетка пикселей)
+        List<float> VBORasterOutline;   // VBO Растра (контур)
         int pixOutlineCount = 0;        // Кол-во вершин (пикселей) растра
         HashSet<Point> pixOutline;      // Множество пикселей контура
         Dictionary<int, int> pixLeft;   // "левые" пиксели
         Dictionary<int, int> pixRight;  // "правые" пиксели
-        Point RasterTrans;              // смещение с учетом центровки
         
         string name;                    // имя объекта
         public string Name
@@ -118,15 +117,15 @@ namespace LR_2
             translation = new Point(0, 0);
             FillColor = Color;
             radius = minRadius;
-            gl.GenBuffers(2, VBOPtr);
+            gl.GenBuffers(3, VBOPtr);
             Texture = new Texture(gl, @"Textures/default.png");
             scale = new PointF(1f, 1f);
             this.Raster = Raster;
             VBORaster = new List<float>();
+            VBORasterOutline = new List<float>();
             pixOutline = new HashSet<Point>();
             pixLeft = new Dictionary<int, int>();
             pixRight = new Dictionary<int, int>();
-            RasterTrans = new Point(0, 0);
             GenerateUV();
             UpdateVBO();
             Rasterize();
@@ -169,6 +168,7 @@ namespace LR_2
         public void Rasterize()
         {
             VBORaster.Clear();      // Очищаем VBO растра,
+            VBORasterOutline.Clear();
             pixOutline.Clear();     // можество пикселей,
             pixLeft.Clear();        // словари "левых"
             pixRight.Clear();       // и "правых" пикселей
@@ -201,7 +201,6 @@ namespace LR_2
             double sin = Math.Sin(rotation * Math.PI / 180.0);
             double Sx = Scale.X, Sy = Scale.Y;
             double Tx = Center(translation.X), Ty = Center(translation.Y);
-            RasterTrans.X = (int)Tx; RasterTrans.Y = (int)Ty;
             double x0, y0, x1, y1;       // World-Space координаты
             int xt0, yt0, xt1, yt1;     // Преобразованные координаты
 
@@ -222,6 +221,10 @@ namespace LR_2
                 transform(x0, y0, out xt0, out yt0);    // Преобразуем
                 transform(x1, y1, out xt1, out yt1);    // координаты и
                 BresenhamLine(xt0, yt0, xt1, yt1);      // растеризуем Брезенхемом
+                VBORasterOutline.Add(xt0);
+                VBORasterOutline.Add(yt0);
+                VBORasterOutline.Add(xt1);
+                VBORasterOutline.Add(yt1);
             }
 
             // Заливка
@@ -242,6 +245,8 @@ namespace LR_2
 
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[1]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBORaster.ToArray(), OpenGL.GL_DYNAMIC_DRAW);
+            gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, VBORasterOutline.ToArray(), OpenGL.GL_DYNAMIC_DRAW);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
         }
         #endregion
@@ -387,15 +392,10 @@ namespace LR_2
             // Центрированный контур
             if ((RenderMode & RenderFlags.RealRasterOutline) != 0)
             {
-                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[0]);
+                gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, VBOPtr[2]);
                 gl.VertexPointer(2, OpenGL.GL_FLOAT, 0, IntPtr.Zero);
-                gl.PushMatrix();
-                gl.Translate(RasterTrans.X, RasterTrans.Y, 0f);
-                gl.Rotate(rotation, 0f, 0f, 1f);
-                gl.Scale(scale.X, scale.Y, 0f);
                 gl.Color(black);
-                gl.DrawArrays(OpenGL.GL_LINE_STRIP, 1, 7);
-                gl.PopMatrix();
+                gl.DrawArrays(OpenGL.GL_LINES, 0, 12);
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
 

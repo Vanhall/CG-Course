@@ -105,7 +105,7 @@ namespace LR_3
         /// вокруг произвольной оси на заданный угол
         /// </summary>
         /// <param name="angle">Ось вращения</param>
-        /// <param name="Axis">Угол</param>
+        /// <param name="Axis">Угол в радианах</param>
         public void GenerateRotation(double angle, Vector Axis)
         {
             SetIdentity();

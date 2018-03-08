@@ -57,6 +57,12 @@ namespace LR_3
             return result;
         }
 
+        /// <summary>
+        /// Разность векторов
+        /// </summary>
+        /// <param name="lop">Левый операнд</param>
+        /// <param name="rop">Правый операнд</param>
+        /// <returns>Разность векторов</returns>
         public static Vector operator -(Vector lop, Vector rop)
         {
             //TODO: проверка размерности

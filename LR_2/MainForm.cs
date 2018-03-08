@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using System.IO;
 using SharpGL;
 
 namespace LR_2
@@ -30,6 +31,8 @@ namespace LR_2
 
             RasterizeOutlineRB.CheckedChanged += new EventHandler(RasterizeChBox_CheckedChanged);
             RasterizeFillRB.CheckedChanged += new EventHandler(RasterizeChBox_CheckedChanged);
+
+            openFileDialog.InitialDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Textures");
         }
 
         #region Обработчики событий OpenGL Control

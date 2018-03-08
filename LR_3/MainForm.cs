@@ -19,15 +19,15 @@ namespace LR_3
 
             PerspectiveRB.CheckedChanged += new EventHandler(Projection_Changed);
             OrthoRB.CheckedChanged += new EventHandler(Projection_Changed);
+            MaterialSwitcher.DataSource = Enum.GetValues(typeof(Material.ID));
+            PickModel.Text = "Модель: " + scene.Model.Name;
+            FileDialog.InitialDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Models");
+            TextureFileDialog.InitialDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Textures");
         }
 
         private void GLControl_OpenGLInitialized(object sender, EventArgs e)
         {
             scene = new Scene(GLControl, 60.0, 1.0, 200.0);
-            MaterialSwitcher.DataSource = Enum.GetValues(typeof(Material.ID));
-            PickModel.Text = "Модель: " + scene.Model.Name;
-            FileDialog.InitialDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Models");
-            TextureFileDialog.InitialDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Textures");
         }
 
         private void GLControl_OpenGLDraw(object sender, SharpGL.RenderEventArgs args)

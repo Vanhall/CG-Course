@@ -71,20 +71,14 @@ namespace LR_3
             W = GLControl.Width;
             H = GLControl.Height;
             Ortho = false;
-
-            gl.ClearColor(0.7f, 0.7f, 0.8f, 1.0f);
-
-            gl.MatrixMode(OpenGL.GL_PROJECTION);
-            gl.LoadIdentity();
-            gl.Perspective(FOV, (double)W / (double)H, zNear, zFar);
-            gl.MatrixMode(OpenGL.GL_MODELVIEW);
-
+            
             Axies = new Axies(gl, 35f);
             ShowAxies = true;
             Cam = new Camera(gl);
             OrthoFactor = Cam.R;
             Model = new Model(gl, @"Models/Spiral.xml");
 
+            gl.ClearColor(0.7f, 0.7f, 0.8f, 1.0f);
             gl.Enable(OpenGL.GL_DEPTH_TEST);
             gl.Enable(OpenGL.GL_LIGHT0);
             gl.LightModel(OpenGL.GL_LIGHT_MODEL_COLOR_CONTROL_EXT, OpenGL.GL_SEPARATE_SPECULAR_COLOR_EXT);
