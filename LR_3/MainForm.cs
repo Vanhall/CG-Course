@@ -42,10 +42,8 @@ namespace LR_3
 
         private void GLControl_MouseDown(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Middle)
-                scene.Cam.Reset();
-            else
-                camMoving = true;
+            if (e.Button == MouseButtons.Middle) scene.Cam.Reset();
+            if (e.Button == MouseButtons.Left) camMoving = true;
         }
 
         private void GLControl_MouseMove(object sender, MouseEventArgs e)
@@ -58,6 +56,11 @@ namespace LR_3
                             scene.Cam.Phi - (e.X - mouseStartDrag.X) / 3.0,
                             scene.Cam.Psi - (e.Y - mouseStartDrag.Y) / 3.0);
                 }
+            }
+            if (e.Button == MouseButtons.Right)
+            {
+                scene.Model.XRotation += (e.X - mouseStartDrag.X) / 3.0f;
+                scene.Model.YRotation += (e.Y - mouseStartDrag.Y) / 3.0f;
             }
             mouseStartDrag = e.Location;
         }
@@ -84,6 +87,8 @@ namespace LR_3
                 case Keys.D: scene.Cam.Translate(0, -1.0, 0); break;
                 case Keys.R: scene.Cam.Translate(0, 0, 1.0); break;
                 case Keys.F: scene.Cam.Translate(0, 0, -1.0); break;
+                case Keys.Q: scene.Model.ZRotation += 3f; break;
+                case Keys.E: scene.Model.ZRotation -= 3f; break;
             }
         }
 
@@ -172,6 +177,13 @@ namespace LR_3
             {
                 scene.Model.Texture.ChangeImage(TextureFileDialog.FileName);
             }
+        }
+
+        private void ResetRotation_Click(object sender, EventArgs e)
+        {
+            scene.Model.XRotation = 0f;
+            scene.Model.YRotation = 0f;
+            scene.Model.ZRotation = 0f;
         }
     }
 }

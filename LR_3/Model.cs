@@ -48,6 +48,11 @@ namespace LR_3
         public Material Material;
         public Texture Texture;
 
+        Vector translation = new Vector(3);
+        public float XRotation = 0f;
+        public float YRotation = 0f;
+        public float ZRotation = 0f;
+
         public Model(OpenGL GL, string path)
         {
             gl = GL;
@@ -76,6 +81,11 @@ namespace LR_3
 
             var node = inputFile.SelectSingleNode("model");
             Name = node.Attributes[0].Value;
+
+            node = inputFile.SelectSingleNode("model/center");
+            translation[Vector.Axis.X] = double.Parse(node.Attributes[0].Value, dblFormat);
+            translation[Vector.Axis.Y] = double.Parse(node.Attributes[1].Value, dblFormat);
+            translation[Vector.Axis.Z] = double.Parse(node.Attributes[2].Value, dblFormat);
 
             node = inputFile.SelectSingleNode("model/section");
             foreach (XmlNode vertex in node.ChildNodes)
@@ -413,7 +423,12 @@ namespace LR_3
         public void Render()
         {
             gl.EnableClientState(OpenGL.GL_VERTEX_ARRAY);
-            
+
+            float[] t = translation.ToArray();
+            gl.PushMatrix();
+            gl.Translate(t[0], t[1], t[2]);
+            gl.Rotate(XRotation, YRotation, ZRotation);
+            gl.Translate(-t[0], -t[1], -t[2]);
             // Нормали
             if ((RenderMode & RenderFlags.Normal) != 0 && (RenderMode & RenderFlags.Flat) != 0)
             {
@@ -505,7 +520,8 @@ namespace LR_3
                 gl.Enable(OpenGL.GL_DEPTH_TEST);
                 gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, 0);
             }
-            
+
+            gl.PopMatrix();
             gl.DisableClientState(OpenGL.GL_VERTEX_ARRAY);
         }
     }

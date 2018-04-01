@@ -31,30 +31,31 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.GLControl = new SharpGL.OpenGLControl();
             this.MainPanel = new System.Windows.Forms.Panel();
+            this.ViewControls = new System.Windows.Forms.GroupBox();
+            this.TrajectoryChBox = new System.Windows.Forms.CheckBox();
+            this.WireframeChBox = new System.Windows.Forms.CheckBox();
+            this.SectionsChBox = new System.Windows.Forms.CheckBox();
+            this.SmoothChBox = new System.Windows.Forms.CheckBox();
+            this.NormalsChBox = new System.Windows.Forms.CheckBox();
+            this.TextureChBox = new System.Windows.Forms.CheckBox();
             this.ProjectionControls = new System.Windows.Forms.GroupBox();
             this.OrthoRB = new System.Windows.Forms.RadioButton();
             this.PerspectiveRB = new System.Windows.Forms.RadioButton();
             this.ModelControls = new System.Windows.Forms.GroupBox();
+            this.TexturePreview = new System.Windows.Forms.PictureBox();
+            this.PickTexture = new System.Windows.Forms.Button();
+            this.TextureLabel = new System.Windows.Forms.Label();
+            this.MaterialLabel = new System.Windows.Forms.Label();
             this.MaterialSwitcher = new System.Windows.Forms.ComboBox();
-            this.WireframeChBox = new System.Windows.Forms.CheckBox();
-            this.SmoothChBox = new System.Windows.Forms.CheckBox();
-            this.TextureChBox = new System.Windows.Forms.CheckBox();
-            this.NormalsChBox = new System.Windows.Forms.CheckBox();
-            this.SectionsChBox = new System.Windows.Forms.CheckBox();
-            this.TrajectoryChBox = new System.Windows.Forms.CheckBox();
             this.PickModel = new System.Windows.Forms.Button();
             this.FileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.ViewControls = new System.Windows.Forms.GroupBox();
-            this.MaterialLabel = new System.Windows.Forms.Label();
-            this.PickTexture = new System.Windows.Forms.Button();
-            this.TexturePreview = new System.Windows.Forms.PictureBox();
-            this.TextureLabel = new System.Windows.Forms.Label();
             this.TextureFileDialog = new System.Windows.Forms.OpenFileDialog();
+            this.ResetRotation = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.GLControl)).BeginInit();
             this.MainPanel.SuspendLayout();
+            this.ViewControls.SuspendLayout();
             this.ProjectionControls.SuspendLayout();
             this.ModelControls.SuspendLayout();
-            this.ViewControls.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.TexturePreview)).BeginInit();
             this.SuspendLayout();
             // 
@@ -89,11 +90,94 @@
             this.MainPanel.Size = new System.Drawing.Size(211, 729);
             this.MainPanel.TabIndex = 1;
             // 
+            // ViewControls
+            // 
+            this.ViewControls.Controls.Add(this.TrajectoryChBox);
+            this.ViewControls.Controls.Add(this.WireframeChBox);
+            this.ViewControls.Controls.Add(this.SectionsChBox);
+            this.ViewControls.Controls.Add(this.SmoothChBox);
+            this.ViewControls.Controls.Add(this.NormalsChBox);
+            this.ViewControls.Controls.Add(this.TextureChBox);
+            this.ViewControls.Location = new System.Drawing.Point(3, 142);
+            this.ViewControls.Name = "ViewControls";
+            this.ViewControls.Size = new System.Drawing.Size(205, 86);
+            this.ViewControls.TabIndex = 2;
+            this.ViewControls.TabStop = false;
+            this.ViewControls.Text = "Параметры отображения";
+            // 
+            // TrajectoryChBox
+            // 
+            this.TrajectoryChBox.AutoSize = true;
+            this.TrajectoryChBox.Location = new System.Drawing.Point(7, 19);
+            this.TrajectoryChBox.Name = "TrajectoryChBox";
+            this.TrajectoryChBox.Size = new System.Drawing.Size(86, 17);
+            this.TrajectoryChBox.TabIndex = 1;
+            this.TrajectoryChBox.Text = "Траектория";
+            this.TrajectoryChBox.UseVisualStyleBackColor = true;
+            this.TrajectoryChBox.CheckedChanged += new System.EventHandler(this.TrajectoryChBox_CheckedChanged);
+            // 
+            // WireframeChBox
+            // 
+            this.WireframeChBox.AutoSize = true;
+            this.WireframeChBox.Location = new System.Drawing.Point(7, 65);
+            this.WireframeChBox.Name = "WireframeChBox";
+            this.WireframeChBox.Size = new System.Drawing.Size(63, 17);
+            this.WireframeChBox.TabIndex = 6;
+            this.WireframeChBox.Text = "Каркас";
+            this.WireframeChBox.UseVisualStyleBackColor = true;
+            this.WireframeChBox.CheckedChanged += new System.EventHandler(this.WireframeChBox_CheckedChanged);
+            // 
+            // SectionsChBox
+            // 
+            this.SectionsChBox.AutoSize = true;
+            this.SectionsChBox.Location = new System.Drawing.Point(99, 19);
+            this.SectionsChBox.Name = "SectionsChBox";
+            this.SectionsChBox.Size = new System.Drawing.Size(68, 17);
+            this.SectionsChBox.TabIndex = 2;
+            this.SectionsChBox.Text = "Сечения";
+            this.SectionsChBox.UseVisualStyleBackColor = true;
+            this.SectionsChBox.CheckedChanged += new System.EventHandler(this.SectionsChBox_CheckedChanged);
+            // 
+            // SmoothChBox
+            // 
+            this.SmoothChBox.AutoSize = true;
+            this.SmoothChBox.Location = new System.Drawing.Point(99, 42);
+            this.SmoothChBox.Name = "SmoothChBox";
+            this.SmoothChBox.Size = new System.Drawing.Size(94, 17);
+            this.SmoothChBox.TabIndex = 5;
+            this.SmoothChBox.Text = "Сглаживание";
+            this.SmoothChBox.UseVisualStyleBackColor = true;
+            this.SmoothChBox.CheckedChanged += new System.EventHandler(this.SmoothChBox_CheckedChanged);
+            // 
+            // NormalsChBox
+            // 
+            this.NormalsChBox.AutoSize = true;
+            this.NormalsChBox.Location = new System.Drawing.Point(7, 42);
+            this.NormalsChBox.Name = "NormalsChBox";
+            this.NormalsChBox.Size = new System.Drawing.Size(72, 17);
+            this.NormalsChBox.TabIndex = 3;
+            this.NormalsChBox.Text = "Нормали";
+            this.NormalsChBox.UseVisualStyleBackColor = true;
+            this.NormalsChBox.CheckedChanged += new System.EventHandler(this.NormalsChBox_CheckedChanged);
+            // 
+            // TextureChBox
+            // 
+            this.TextureChBox.AutoSize = true;
+            this.TextureChBox.Checked = true;
+            this.TextureChBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.TextureChBox.Location = new System.Drawing.Point(99, 65);
+            this.TextureChBox.Name = "TextureChBox";
+            this.TextureChBox.Size = new System.Drawing.Size(73, 17);
+            this.TextureChBox.TabIndex = 4;
+            this.TextureChBox.Text = "Текстура";
+            this.TextureChBox.UseVisualStyleBackColor = true;
+            this.TextureChBox.CheckedChanged += new System.EventHandler(this.TextureChBox_CheckedChanged);
+            // 
             // ProjectionControls
             // 
             this.ProjectionControls.Controls.Add(this.OrthoRB);
             this.ProjectionControls.Controls.Add(this.PerspectiveRB);
-            this.ProjectionControls.Location = new System.Drawing.Point(3, 201);
+            this.ProjectionControls.Location = new System.Drawing.Point(3, 234);
             this.ProjectionControls.Name = "ProjectionControls";
             this.ProjectionControls.Size = new System.Drawing.Size(205, 60);
             this.ProjectionControls.TabIndex = 1;
@@ -126,6 +210,7 @@
             // 
             this.ModelControls.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.ModelControls.Controls.Add(this.ResetRotation);
             this.ModelControls.Controls.Add(this.TexturePreview);
             this.ModelControls.Controls.Add(this.PickTexture);
             this.ModelControls.Controls.Add(this.TextureLabel);
@@ -134,10 +219,47 @@
             this.ModelControls.Controls.Add(this.PickModel);
             this.ModelControls.Location = new System.Drawing.Point(3, 13);
             this.ModelControls.Name = "ModelControls";
-            this.ModelControls.Size = new System.Drawing.Size(205, 90);
+            this.ModelControls.Size = new System.Drawing.Size(205, 123);
             this.ModelControls.TabIndex = 0;
             this.ModelControls.TabStop = false;
             this.ModelControls.Text = "Модель";
+            // 
+            // TexturePreview
+            // 
+            this.TexturePreview.Image = global::LR_3.Properties.Resources.photosicon;
+            this.TexturePreview.Location = new System.Drawing.Point(5, 62);
+            this.TexturePreview.Name = "TexturePreview";
+            this.TexturePreview.Size = new System.Drawing.Size(23, 23);
+            this.TexturePreview.TabIndex = 3;
+            this.TexturePreview.TabStop = false;
+            // 
+            // PickTexture
+            // 
+            this.PickTexture.Location = new System.Drawing.Point(28, 62);
+            this.PickTexture.Name = "PickTexture";
+            this.PickTexture.Size = new System.Drawing.Size(63, 23);
+            this.PickTexture.TabIndex = 9;
+            this.PickTexture.Text = "Обзор...";
+            this.PickTexture.UseVisualStyleBackColor = true;
+            this.PickTexture.Click += new System.EventHandler(this.PickTexture_Click);
+            // 
+            // TextureLabel
+            // 
+            this.TextureLabel.AutoSize = true;
+            this.TextureLabel.Location = new System.Drawing.Point(4, 46);
+            this.TextureLabel.Name = "TextureLabel";
+            this.TextureLabel.Size = new System.Drawing.Size(57, 13);
+            this.TextureLabel.TabIndex = 8;
+            this.TextureLabel.Text = "Текстура:";
+            // 
+            // MaterialLabel
+            // 
+            this.MaterialLabel.AutoSize = true;
+            this.MaterialLabel.Location = new System.Drawing.Point(96, 47);
+            this.MaterialLabel.Name = "MaterialLabel";
+            this.MaterialLabel.Size = new System.Drawing.Size(60, 13);
+            this.MaterialLabel.TabIndex = 8;
+            this.MaterialLabel.Text = "Материал:";
             // 
             // MaterialSwitcher
             // 
@@ -148,74 +270,6 @@
             this.MaterialSwitcher.Size = new System.Drawing.Size(97, 21);
             this.MaterialSwitcher.TabIndex = 7;
             this.MaterialSwitcher.SelectedIndexChanged += new System.EventHandler(this.MaterialSwitcher_SelectedIndexChanged);
-            // 
-            // WireframeChBox
-            // 
-            this.WireframeChBox.AutoSize = true;
-            this.WireframeChBox.Location = new System.Drawing.Point(7, 65);
-            this.WireframeChBox.Name = "WireframeChBox";
-            this.WireframeChBox.Size = new System.Drawing.Size(63, 17);
-            this.WireframeChBox.TabIndex = 6;
-            this.WireframeChBox.Text = "Каркас";
-            this.WireframeChBox.UseVisualStyleBackColor = true;
-            this.WireframeChBox.CheckedChanged += new System.EventHandler(this.WireframeChBox_CheckedChanged);
-            // 
-            // SmoothChBox
-            // 
-            this.SmoothChBox.AutoSize = true;
-            this.SmoothChBox.Location = new System.Drawing.Point(99, 42);
-            this.SmoothChBox.Name = "SmoothChBox";
-            this.SmoothChBox.Size = new System.Drawing.Size(94, 17);
-            this.SmoothChBox.TabIndex = 5;
-            this.SmoothChBox.Text = "Сглаживание";
-            this.SmoothChBox.UseVisualStyleBackColor = true;
-            this.SmoothChBox.CheckedChanged += new System.EventHandler(this.SmoothChBox_CheckedChanged);
-            // 
-            // TextureChBox
-            // 
-            this.TextureChBox.AutoSize = true;
-            this.TextureChBox.Checked = true;
-            this.TextureChBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.TextureChBox.Location = new System.Drawing.Point(99, 65);
-            this.TextureChBox.Name = "TextureChBox";
-            this.TextureChBox.Size = new System.Drawing.Size(73, 17);
-            this.TextureChBox.TabIndex = 4;
-            this.TextureChBox.Text = "Текстура";
-            this.TextureChBox.UseVisualStyleBackColor = true;
-            this.TextureChBox.CheckedChanged += new System.EventHandler(this.TextureChBox_CheckedChanged);
-            // 
-            // NormalsChBox
-            // 
-            this.NormalsChBox.AutoSize = true;
-            this.NormalsChBox.Location = new System.Drawing.Point(7, 42);
-            this.NormalsChBox.Name = "NormalsChBox";
-            this.NormalsChBox.Size = new System.Drawing.Size(72, 17);
-            this.NormalsChBox.TabIndex = 3;
-            this.NormalsChBox.Text = "Нормали";
-            this.NormalsChBox.UseVisualStyleBackColor = true;
-            this.NormalsChBox.CheckedChanged += new System.EventHandler(this.NormalsChBox_CheckedChanged);
-            // 
-            // SectionsChBox
-            // 
-            this.SectionsChBox.AutoSize = true;
-            this.SectionsChBox.Location = new System.Drawing.Point(99, 19);
-            this.SectionsChBox.Name = "SectionsChBox";
-            this.SectionsChBox.Size = new System.Drawing.Size(68, 17);
-            this.SectionsChBox.TabIndex = 2;
-            this.SectionsChBox.Text = "Сечения";
-            this.SectionsChBox.UseVisualStyleBackColor = true;
-            this.SectionsChBox.CheckedChanged += new System.EventHandler(this.SectionsChBox_CheckedChanged);
-            // 
-            // TrajectoryChBox
-            // 
-            this.TrajectoryChBox.AutoSize = true;
-            this.TrajectoryChBox.Location = new System.Drawing.Point(7, 19);
-            this.TrajectoryChBox.Name = "TrajectoryChBox";
-            this.TrajectoryChBox.Size = new System.Drawing.Size(86, 17);
-            this.TrajectoryChBox.TabIndex = 1;
-            this.TrajectoryChBox.Text = "Траектория";
-            this.TrajectoryChBox.UseVisualStyleBackColor = true;
-            this.TrajectoryChBox.CheckedChanged += new System.EventHandler(this.TrajectoryChBox_CheckedChanged);
             // 
             // PickModel
             // 
@@ -233,61 +287,19 @@
             // 
             this.FileDialog.Filter = "XML Model|*.xml";
             // 
-            // ViewControls
-            // 
-            this.ViewControls.Controls.Add(this.TrajectoryChBox);
-            this.ViewControls.Controls.Add(this.WireframeChBox);
-            this.ViewControls.Controls.Add(this.SectionsChBox);
-            this.ViewControls.Controls.Add(this.SmoothChBox);
-            this.ViewControls.Controls.Add(this.NormalsChBox);
-            this.ViewControls.Controls.Add(this.TextureChBox);
-            this.ViewControls.Location = new System.Drawing.Point(3, 109);
-            this.ViewControls.Name = "ViewControls";
-            this.ViewControls.Size = new System.Drawing.Size(205, 86);
-            this.ViewControls.TabIndex = 2;
-            this.ViewControls.TabStop = false;
-            this.ViewControls.Text = "Параметры отображения";
-            // 
-            // MaterialLabel
-            // 
-            this.MaterialLabel.AutoSize = true;
-            this.MaterialLabel.Location = new System.Drawing.Point(96, 47);
-            this.MaterialLabel.Name = "MaterialLabel";
-            this.MaterialLabel.Size = new System.Drawing.Size(60, 13);
-            this.MaterialLabel.TabIndex = 8;
-            this.MaterialLabel.Text = "Материал:";
-            // 
-            // PickTexture
-            // 
-            this.PickTexture.Location = new System.Drawing.Point(28, 62);
-            this.PickTexture.Name = "PickTexture";
-            this.PickTexture.Size = new System.Drawing.Size(63, 23);
-            this.PickTexture.TabIndex = 9;
-            this.PickTexture.Text = "Обзор...";
-            this.PickTexture.UseVisualStyleBackColor = true;
-            this.PickTexture.Click += new System.EventHandler(this.PickTexture_Click);
-            // 
-            // TexturePreview
-            // 
-            this.TexturePreview.Image = global::LR_3.Properties.Resources.photosicon;
-            this.TexturePreview.Location = new System.Drawing.Point(5, 62);
-            this.TexturePreview.Name = "TexturePreview";
-            this.TexturePreview.Size = new System.Drawing.Size(23, 23);
-            this.TexturePreview.TabIndex = 3;
-            this.TexturePreview.TabStop = false;
-            // 
-            // TextureLabel
-            // 
-            this.TextureLabel.AutoSize = true;
-            this.TextureLabel.Location = new System.Drawing.Point(4, 46);
-            this.TextureLabel.Name = "TextureLabel";
-            this.TextureLabel.Size = new System.Drawing.Size(57, 13);
-            this.TextureLabel.TabIndex = 8;
-            this.TextureLabel.Text = "Текстура:";
-            // 
             // TextureFileDialog
             // 
             this.TextureFileDialog.Filter = "PNG Image|*.png";
+            // 
+            // ResetRotation
+            // 
+            this.ResetRotation.Location = new System.Drawing.Point(7, 92);
+            this.ResetRotation.Name = "ResetRotation";
+            this.ResetRotation.Size = new System.Drawing.Size(189, 23);
+            this.ResetRotation.TabIndex = 10;
+            this.ResetRotation.Text = "Сбросить вращение";
+            this.ResetRotation.UseVisualStyleBackColor = true;
+            this.ResetRotation.Click += new System.EventHandler(this.ResetRotation_Click);
             // 
             // MainForm
             // 
@@ -304,12 +316,12 @@
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
             ((System.ComponentModel.ISupportInitialize)(this.GLControl)).EndInit();
             this.MainPanel.ResumeLayout(false);
+            this.ViewControls.ResumeLayout(false);
+            this.ViewControls.PerformLayout();
             this.ProjectionControls.ResumeLayout(false);
             this.ProjectionControls.PerformLayout();
             this.ModelControls.ResumeLayout(false);
             this.ModelControls.PerformLayout();
-            this.ViewControls.ResumeLayout(false);
-            this.ViewControls.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.TexturePreview)).EndInit();
             this.ResumeLayout(false);
 
@@ -338,6 +350,7 @@
         private System.Windows.Forms.Label MaterialLabel;
         private System.Windows.Forms.Label TextureLabel;
         private System.Windows.Forms.OpenFileDialog TextureFileDialog;
+        private System.Windows.Forms.Button ResetRotation;
     }
 }
 

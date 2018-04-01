@@ -69,10 +69,10 @@ namespace LR_3
 
             gl.DrawArrays(OpenGL.GL_LINES, 0, 6);
 
-            gl.Enable(OpenGL.GL_LINE_STIPPLE);
-            gl.LineStipple(1, 0xFF00);
-            gl.DrawArrays(OpenGL.GL_LINES, 6, 6);
-            gl.Disable(OpenGL.GL_LINE_STIPPLE);
+            //gl.Enable(OpenGL.GL_LINE_STIPPLE);
+            //gl.LineStipple(1, 0xFF00);
+            //gl.DrawArrays(OpenGL.GL_LINES, 6, 6);
+            //gl.Disable(OpenGL.GL_LINE_STIPPLE);
 
             gl.DisableClientState(OpenGL.GL_COLOR_ARRAY);
 

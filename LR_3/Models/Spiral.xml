@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <model name="Spiral">
+  <center x="0" y="0" z="0"/>
   <section>
     <v x="0" y="0" z="2.0"/>
     <v x="0" y="0.766" z="1.848"/>
