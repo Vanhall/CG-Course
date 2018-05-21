@@ -58,6 +58,8 @@ namespace RGZ
                 Scene.AddControlPoint(new Point(e.X - CenterOffset.X, H - e.Y - CenterOffset.Y));
                 Scene.ActivePoint = ControlPointsGrid.CurrentRow.Index;
             }
+            if (e.Button == MouseButtons.Right)
+                Scene.MoveControlPoint(new Point(e.X - CenterOffset.X, H - e.Y - CenterOffset.Y));
         }
         
         private void GLControl_Resized(object sender, EventArgs e)

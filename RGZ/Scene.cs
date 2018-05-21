@@ -94,6 +94,20 @@ namespace RGZ
             }
         }
 
+        public void MoveControlPoint(Point P)
+        {
+            if (ActivePoint >= 0)
+            {
+                ControlPoints[ActivePoint] = new Point2D(P);
+                UpdatePointsVBO();
+                if (EnoughPoints)
+                {
+                    S = new Spline(ControlPoints.ToArray(), degree);
+                    UpdateVBO();
+                }
+            }
+        }
+
         public void RemoveControlPoint(int index)
         {
             ControlPoints.RemoveAt(index);
@@ -176,7 +190,7 @@ namespace RGZ
 
                 if (ActivePoint >= 0)
                 {
-                    gl.PointSize(8f);
+                    gl.PointSize(10f);
                     gl.Color(ActivePointColor.R, ActivePointColor.G, ActivePointColor.B);
                     gl.DrawArrays(OpenGL.GL_POINTS, ActivePoint, 1);
                 }
