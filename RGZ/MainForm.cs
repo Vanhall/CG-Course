@@ -16,9 +16,6 @@ namespace RGZ
         {
             InitializeComponent();
 
-            SquareRB.CheckedChanged += new EventHandler(Degree_Changed);
-            CubicRB.CheckedChanged += new EventHandler(Degree_Changed);
-
             ControlPointsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             foreach (DataGridViewColumn column in ControlPointsGrid.Columns)
                 column.SortMode = DataGridViewColumnSortMode.NotSortable;
@@ -83,10 +80,9 @@ namespace RGZ
             Scene.Steps = (int)StepsPicker.Value;
         }
 
-        private void Degree_Changed(object sender, EventArgs e)
+        private void DegreePicker_ValueChanged(object sender, EventArgs e)
         {
-            if (SquareRB.Checked) Scene.Degree = 2;
-            else Scene.Degree = 3;
+            Scene.Degree = (int)DegreePicker.Value;
         }
         #endregion
 
