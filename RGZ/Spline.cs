@@ -9,7 +9,7 @@ namespace RGZ
     public class Spline
     {
         /// <summary>
-        /// Управляющие точки.
+        /// Контрольные точки.
         /// </summary>
         Point2D[] ControlPoints;
 
@@ -24,7 +24,7 @@ namespace RGZ
         int p;
 
         /// <summary>
-        /// Вспомогательный параметр (Кол-во КТ - 1).
+        /// Количество контрольных точек.
         /// </summary>
         int n;
 
@@ -37,15 +37,15 @@ namespace RGZ
         {
             ControlPoints = CP;
             p = Degree;
-            n = CP.Length - 1;
+            n = CP.Length;
 
-            Nodes = new double[n + p + 2];
+            Nodes = new double[n + p + 1];
 
             int t = 0, i = 0;
             for (; i < p + 1; i++) Nodes[i] = t;
-            for (; i < n + 1; i++) Nodes[i] = ++t;
+            for (; i < n; i++) Nodes[i] = ++t;
             t++;
-            for (; i < n + p + 2; i++) Nodes[i] = t;
+            for (; i < n + p + 1; i++) Nodes[i] = t;
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace RGZ
         {
             var result = new List<float>();
 
-            for (int k = p; k < n + 1; k++)
+            for (int k = p; k < n; k++)
             {
                 double step = (Nodes[k + 1] - Nodes[k]) / Steps;
                 double t0 = Nodes[k];
